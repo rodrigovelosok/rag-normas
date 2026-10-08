@@ -157,6 +157,31 @@ atingir os limites (o contrário do art. 15, § 5º), e, na Q15, atribuiu à res
 solidariedade. Nenhuma métrica atual pega isso; seria preciso um conjunto de "afirmações proibidas" por pergunta ou
 revisão humana. Os 12 acertos de cada modelo valem como "completo e citado", não como "juridicamente correto".
 
+**Experimento de prompt para completude (resultado negativo).** Hipótese: o pedido "em poucas frases" (no
+`SYSTEM_PROMPT` e no `REMINDER`) faz o 3b omitir itens de listas. Variante testada, mudando **só o texto do prompt**
+(mesmo modelo, mesmos parâmetros, mesmas 21 perguntas): "em poucas frases" saiu; entrou o pedido de trazer todos os
+itens da lista, sem resumir. Resultados em `eval/relatorios/comparacao-prompt.md`:
+
+| | 3b depois (prompt original) | 3b completo (variante) |
+|---|---:|---:|
+| Respostas corretas | 12 de 21 | 10 de 21 |
+| Itens do gabarito presentes | 73% | 68% |
+| Citações dos artigos esperados | 86% | 80% |
+| Citações inexistentes | 0 | 0 |
+| Tempo médio das respondidas | 60,5 s | 80,0 s |
+| Tamanho médio da resposta | 544 caracteres | 522 caracteres |
+
+A variante **não ajudou**: as respostas não ficaram mais longas, e as duas perguntas que pioraram (Q03 e Q11) foram
+cortes em pontos diferentes (o modelo copia os fragmentos e para onde quer), não efeito do pedido. A hipótese estava
+errada: o limite de tamanho não vem de "em poucas frases". Com temperatura 0, mudar qualquer palavra do prompt muda o
+caminho da geração; uma diferença de 2 perguntas em 21 está dentro desse ruído, então **não afirmo que a variante é
+pior**, só que não há evidência de melhora. Decisão: prompt original mantido (a variante foi desfeita, nada a
+reverter no produto). O tempo maior (80 s) não é comparável: a máquina varia entre rodadas e o cache de prefixo do
+Ollama muda os tempos. Intercorrência: a Q16 estourou o limite de 300 s na primeira tentativa (o Ollama continuou
+vivo); a rodada foi retomada com `--resume` e `RAG_TIMEOUT=600`, e a Q16 levou 15 s na segunda tentativa, o que
+indica travamento pontual e não pergunta lenta. Limite do experimento: uma única variante e uma única rodada por
+variante.
+
 **Revisão do plano:** a calibração do limiar e a medição do k não precisam do modelo de chat, então rodam em
 segundos; só a comparação 3b × 7b é demorada.
 
