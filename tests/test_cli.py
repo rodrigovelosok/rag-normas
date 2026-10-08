@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from rag_normas import cli
 from rag_normas.cli import main
 from rag_normas.generate import DISCLAIMER, REFUSAL_MESSAGE
 from rag_normas.index import load_index
@@ -210,6 +211,33 @@ def test_environment_variable_is_used_and_the_option_wins(indexed, capsys):
     assert len(sources_in(capsys.readouterr().out)) == 2
 
 
+def spy_on_the_search(monkeypatch) -> dict:
+    """Troca a busca por uma cópia que anota com quais argumentos foi chamada."""
+    seen: dict = {}
+    real = cli.hybrid_search
+
+    def spy(*args, **kwargs):
+        seen.update(kwargs)
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(cli, "hybrid_search", spy)
+    return seen
+
+
+def test_rrf_k_option_reaches_the_search(indexed, monkeypatch):
+    seen = spy_on_the_search(monkeypatch)
+    assert run_ask(indexed, "arrolamento", ["--rrf-k", "7"]) == 0
+    assert seen["rrf_k"] == 7 and seen["k"] == 4
+
+
+def test_rrf_k_comes_from_the_environment_and_the_option_wins(indexed, monkeypatch):
+    seen = spy_on_the_search(monkeypatch)
+    assert run_ask(indexed, "arrolamento", env={"RAG_RRF_K": "9"}) == 0
+    assert seen["rrf_k"] == 9
+    assert run_ask(indexed, "arrolamento", ["--rrf-k", "3"], env={"RAG_RRF_K": "9"}) == 0
+    assert seen["rrf_k"] == 3
+
+
 def test_model_and_host_options_reach_the_settings(indexed):
     llm = FakeLLM()
     assert run_ask(indexed, "arrolamento", ["--model", "qwen2.5:7b", "--host", "http://outro:11434"], llm=llm) == 0
@@ -245,7 +273,7 @@ def test_non_numeric_option_is_rejected_by_argparse(indexed):
 def test_scores_option_shows_threshold_and_similarities_on_stderr(indexed, capsys):
     assert run_ask(indexed, "arrolamento", ["--scores"]) == 0
     err = capsys.readouterr().err
-    assert "limiar" in err.lower() and "0.52" in err
+    assert "limiar" in err.lower() and "0.56" in err
     assert "1.000" in err and "norma-teste, art. 1º" in err
 
 

@@ -1,35 +1,25 @@
 # Avaliação da busca (sem modelo de chat)
 
-Data: 2026-10-08 · k usado nas tabelas de falhas e de limiar: 4 · constante do RRF usada nas demais tabelas: 5
+Data: 2026-10-08 · k usado nas tabelas de falhas e de limiar: 4
 
 ## Recuperação dos artigos esperados, por k
 
 | k | Fatos pontuais | Listas e definições | Combinação de normas | Difíceis | Total |
 |---:|---:|---:|---:|---:|---:|
 | 1 | 20% | 40% | 33% | 44% | 33% |
-| 2 | 60% | 70% | 33% | 56% | 57% |
-| 3 | 80% | 90% | 50% | 100% | 81% |
-| 4 | 100% | 100% | 83% | 100% | 97% |
-| 5 | 100% | 100% | 83% | 100% | 97% |
-| 6 | 100% | 100% | 83% | 100% | 97% |
-| 7 | 100% | 100% | 83% | 100% | 97% |
+| 2 | 40% | 70% | 33% | 56% | 51% |
+| 3 | 80% | 70% | 50% | 100% | 75% |
+| 4 | 100% | 80% | 50% | 100% | 84% |
+| 5 | 100% | 80% | 83% | 100% | 91% |
+| 6 | 100% | 80% | 83% | 100% | 91% |
+| 7 | 100% | 80% | 83% | 100% | 91% |
 | 8 | 100% | 100% | 83% | 100% | 97% |
-
-## Constante k do RRF (recuperação total, perguntas respondíveis)
-
-| k do RRF | k = 3 | k = 4 | k = 5 | k = 6 |
-|---:|---:|---:|---:|---:|
-| 1 | 88% | 97% | 97% | 97% |
-| 5 | 81% | 97% | 97% | 97% |
-| 10 | 81% | 91% | 91% | 91% |
-| 20 | 81% | 84% | 91% | 91% |
-| 30 | 75% | 84% | 91% | 91% |
-| 60 | 75% | 84% | 91% | 91% |
-| 100 | 75% | 84% | 91% | 91% |
 
 ## Perguntas em que falta algum artigo esperado entre os k = 4 primeiros
 
 - **Q01** (Combinação de normas): faltou Decreto 7.573/2011, art. 1º
+- **Q04** (Listas e definições): faltou IN RFB 2.091/2022, art. 8º
+- **Q12** (Combinação de normas): faltou IN RFB 2.091/2022, art. 12
 
 ## Similaridade máxima por pergunta (k = 4)
 
@@ -42,19 +32,19 @@ Data: 2026-10-08 · k usado nas tabelas de falhas e de limiar: 4 · constante do
 | Q03 | Listas e definições | responder | 0,699 |
 | Q02 | Listas e definições | responder | 0,693 |
 | Q07 | Fatos pontuais | responder | 0,692 |
-| Q04 | Listas e definições | responder | 0,681 |
-| Q11 | Fatos pontuais | responder | 0,674 |
+| Q11 | Fatos pontuais | responder | 0,672 |
+| Q04 | Listas e definições | responder | 0,670 |
 | Q14 | Difíceis | responder | 0,642 |
-| Q01 | Combinação de normas | responder | 0,640 |
+| Q01 | Combinação de normas | responder | 0,636 |
 | Q13 | Combinação de normas | responder | 0,629 |
 | Q10 | Fatos pontuais | responder | 0,628 |
 | Q05 | Fatos pontuais | responder | 0,626 |
 | Q08 | Fatos pontuais | responder | 0,615 |
 | Q12 | Combinação de normas | responder | 0,584 |
-| Q20 | Fora do corpus | recusar | 0,536 |
-| Q18 | Fora do corpus | recusar | 0,511 |
+| Q20 | Fora do corpus | recusar | 0,535 |
+| Q18 | Fora do corpus | recusar | 0,504 |
 | Q17 | Fora do corpus | recusar | 0,490 |
-| Q19 | Fora do corpus | recusar | 0,462 |
+| Q19 | Fora do corpus | recusar | 0,457 |
 | Q21 | Fora do corpus | recusar | 0,358 |
 
 ## Limiar de recusa (k = 4)
@@ -64,7 +54,7 @@ Data: 2026-10-08 · k usado nas tabelas de falhas e de limiar: 4 · constante do
 | 0,40 | 0 de 16 | 4 de 5 |
 | 0,42 | 0 de 16 | 4 de 5 |
 | 0,44 | 0 de 16 | 4 de 5 |
-| 0,46 | 0 de 16 | 4 de 5 |
+| 0,46 | 0 de 16 | 3 de 5 |
 | 0,48 | 0 de 16 | 3 de 5 |
 | 0,50 | 0 de 16 | 2 de 5 |
 | 0,52 | 0 de 16 | 1 de 5 |
@@ -75,7 +65,7 @@ Data: 2026-10-08 · k usado nas tabelas de falhas e de limiar: 4 · constante do
 | 0,62 | 2 de 16 | 0 de 5 |
 | 0,64 | 6 de 16 | 0 de 5 |
 | 0,66 | 7 de 16 | 0 de 5 |
-| 0,68 | 8 de 16 | 0 de 5 |
+| 0,68 | 9 de 16 | 0 de 5 |
 | 0,70 | 12 de 16 | 0 de 5 |
 
 Limiares sem nenhum erro: de 0,54 a 0,58.

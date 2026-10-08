@@ -14,20 +14,25 @@ from eval.avaliar import (
     Item,
     Question,
     QuestionsError,
+    RrfRow,
     append_score,
     article_recall,
     fold,
     load_questions,
     load_scores,
     main,
+    make_search,
     match_items,
     recall_at_k,
     render_report,
+    render_retrieval_report,
+    retrieve,
     run_answer,
     run_answers,
     score_retrieval,
     strip_citations,
     summarize,
+    sweep_rrf_k,
     sweep_threshold,
 )
 from rag_normas.generate import REFUSAL_MESSAGE
@@ -272,6 +277,57 @@ def test_sweep_threshold_counts_both_kinds_of_error():
     assert rows[0.7].answerable == 2 and rows[0.7].refusable == 2
 
 
+def test_sweep_rrf_k_tries_each_value_and_reports_recall_per_k():
+    calls = []
+
+    def search(q, k, rrf_k):
+        calls.append((q.id, k, rrf_k))
+        if rrf_k == 10:
+            return [hit(CHUNK_2)]  # com rrf_k = 10 o artigo certo vem em 1º
+        return [hit(CHUNK_5)] * 4 + [hit(CHUNK_2)]  # com rrf_k = 60 ele cai para o 5º
+
+    rows = sweep_rrf_k([question()], search, rrf_ks=[10, 60], ks=[1, 4, 5])
+    assert [row.rrf_k for row in rows] == [10, 60]
+    assert rows[0].recall_by_k == {1: 1.0, 4: 1.0, 5: 1.0}
+    assert rows[1].recall_by_k == {1: 0.0, 4: 0.0, 5: 1.0}
+    assert calls == [("Q01", 5, 10), ("Q01", 5, 60)]  # busca uma vez por valor, já com o maior k
+
+
+def test_sweep_rrf_k_ignores_questions_that_must_be_refused():
+    rows = sweep_rrf_k([question(), REFUSE_Q], lambda q, k, rrf_k: [hit(CHUNK_2)], rrf_ks=[60], ks=[1])
+    assert rows[0].recall_by_k == {1: 1.0}
+
+
+def test_retrieve_uses_the_given_rrf_k():
+    chunks = [Chunk("norma-teste", "1", "", "Art. 1º Texto sobre arrolamento."), Chunk("norma-teste", "2", "", "Art. 2º Outro assunto.")]
+    index = build_index(chunks, fake_embed, "bge-m3")
+    q = question(text="arrolamento")
+    assert retrieve([q], index, fake_embed, 1, rrf_k=10)["Q01"][0].score == pytest.approx(2 / 11)
+    assert retrieve([q], index, fake_embed, 1)["Q01"][0].score == pytest.approx(2 / 61)  # padrão: 60
+
+
+def test_make_search_passes_k_and_rrf_k_to_the_hybrid_search():
+    chunks = [Chunk("norma-teste", "1", "", "Art. 1º Texto sobre arrolamento."), Chunk("norma-teste", "2", "", "Art. 2º Outro assunto.")]
+    index = build_index(chunks, fake_embed, "bge-m3")
+    search = make_search(index, fake_embed)
+    q = question(text="arrolamento")
+    # o art. 1º é o 1º do ranking por vetor e o 1º do ranking por palavras: nota 2 / (rrf_k + 1)
+    assert search(q, 1, 60)[0].score == pytest.approx(2 / 61)
+    assert search(q, 1, 10)[0].score == pytest.approx(2 / 11)
+    assert len(search(q, 2, 10)) == 2 and len(search(q, 1, 10)) == 1  # o k limita a quantidade
+
+
+def test_retrieval_report_has_the_rrf_section_only_when_rows_are_given():
+    args = ([question()], {"Q01": [hit(CHUNK_2)]})
+    kwargs = dict(k=4, ks=[1, 4], thresholds=[0.5], today="2026-10-08")
+    without = render_retrieval_report(*args, **kwargs)
+    assert "k do RRF" not in without
+    assert "constante do RRF usada nas demais tabelas: 60" in without
+    assert "constante do RRF usada nas demais tabelas: 7" in render_retrieval_report(*args, **kwargs, rrf_k=7)
+    with_rows = render_retrieval_report(*args, **kwargs, rrf_rows=[RrfRow(10, {1: 1.0, 4: 1.0}), RrfRow(60, {1: 0.0, 4: 1.0})])
+    assert "k do RRF" in with_rows and "| 10 | 100% | 100% |" in with_rows and "| 60 | 0% | 100% |" in with_rows
+
+
 # ---------- resposta: pontuação de uma pergunta ----------
 
 def test_a_complete_cited_answer_is_correct():
@@ -440,6 +496,8 @@ def test_report_has_parameters_groups_total_and_the_failures():
     ]
     report = render_report("qwen2.5:3b", k=4, min_similarity=0.52, scores=scores, today="2026-10-08")
     assert "qwen2.5:3b" in report and "k = 4" in report and "0,52" in report and "2026-10-08" in report
+    assert "constante do RRF: 60" in report
+    assert "constante do RRF: 7" in render_report("m", k=4, min_similarity=0.5, scores=scores, today="2026-10-08", rrf_k=7)
     assert "Fatos pontuais" in report and "Difíceis" in report and "Total" in report
     assert "Q03" in report and "b" in report and "art. 99" in report  # a falha aparece com o item que faltou
     assert "Q01" not in report.split("Falhas")[-1]  # a pergunta correta não é listada como falha
@@ -499,6 +557,20 @@ def test_retrieval_command_prints_and_saves_the_calibration_report(workspace, ca
     assert report.read_text(encoding="utf-8") == out.rstrip("\n") + "\n" or "Recuperação" in report.read_text(encoding="utf-8")
 
 
+def test_retrieval_command_embeds_each_question_only_once_even_with_the_rrf_sweep(workspace, capsys):
+    embedded = []
+
+    def embed(texts):
+        embedded.append(list(texts))
+        return fake_embed(texts)
+
+    code = main(["retrieval", *common(workspace), "--report", str(workspace["tmp"] / "r.md")], environ={},
+                llm_factory=lambda settings: (embed, FakeChat("x")))
+    assert code == 0
+    assert len(embedded) == 2  # uma pergunta = um embedding, mesmo com a busca repetida para cada k do RRF
+    assert "k do RRF" in capsys.readouterr().out
+
+
 def test_retrieval_command_never_calls_the_chat(workspace):
     llm = FakeLLM()
     assert main(["retrieval", *common(workspace), "--report", str(workspace["tmp"] / "r.md")], environ={}, llm_factory=llm) == 0
@@ -517,6 +589,39 @@ def test_answers_command_runs_writes_jsonl_and_report(workspace, capsys):
     assert llm.chat.calls == 1  # a Q02 é recusada pelo limiar, sem chamar o modelo
     assert "modelo-x" in report.read_text(encoding="utf-8")
     assert "Total" in capsys.readouterr().out
+
+
+def test_rrf_k_option_is_used_and_shown_in_both_reports(workspace, capsys):
+    tmp = workspace["tmp"]
+    assert main(["retrieval", *common(workspace), "--rrf-k", "7", "--report", str(tmp / "b.md")], environ={}, llm_factory=FakeLLM()) == 0
+    assert "usada nas demais tabelas: 7" in capsys.readouterr().out
+    args = ["answers", *common(workspace), "--rrf-k", "7", "--output", str(tmp / "r.jsonl"), "--report", str(tmp / "r.md")]
+    assert main(args, environ={}, llm_factory=FakeLLM()) == 0
+    assert "constante do RRF: 7" in capsys.readouterr().out
+    assert main(args, environ={"RAG_RRF_K": "9"}, llm_factory=FakeLLM()) == 0  # a opção vence o ambiente
+    assert "constante do RRF: 7" in capsys.readouterr().out
+    assert main([a for a in args if a not in ("--rrf-k", "7")], environ={"RAG_RRF_K": "9"}, llm_factory=FakeLLM()) == 0
+    assert "constante do RRF: 9" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("command", ["retrieval", "answers"])
+def test_both_commands_search_with_the_configured_rrf_k(workspace, monkeypatch, command):
+    from eval import avaliar
+
+    seen = []
+    real = avaliar.retrieve
+
+    def spy(questions, index, embed, k, rrf_k=60):
+        seen.append(rrf_k)
+        return real(questions, index, embed, k, rrf_k)
+
+    monkeypatch.setattr(avaliar, "retrieve", spy)
+    tmp = workspace["tmp"]
+    args = [command, *common(workspace), "--rrf-k", "7", "--report", str(tmp / "r.md")]
+    if command == "answers":
+        args += ["--output", str(tmp / "r.jsonl")]
+    assert main(args, environ={}, llm_factory=FakeLLM()) == 0
+    assert seen == [7]
 
 
 def test_answers_command_only_runs_the_chosen_questions(workspace):

@@ -37,6 +37,8 @@ GROUP_LABELS = {
 DEFAULT_QUESTIONS = Path("eval/perguntas.json")
 REPORTS_DIR = Path("eval/relatorios")
 DEFAULT_THRESHOLDS = [round(0.40 + 0.02 * step, 2) for step in range(16)]  # 0,40 a 0,70
+DEFAULT_RRF_KS = [1, 5, 10, 20, 30, 60, 100]  # constantes do RRF testadas na varredura
+RRF_SWEEP_KS = [3, 4, 5, 6]  # k em que a varredura mede a recuperação
 
 
 class QuestionsError(ValueError):
@@ -151,6 +153,14 @@ class RecallRow:
 
 
 @dataclass(frozen=True)
+class RrfRow:
+    """Recuperação total (perguntas respondíveis) para cada k, com um dado `rrf_k`."""
+
+    rrf_k: int
+    recall_by_k: dict[int, float]
+
+
+@dataclass(frozen=True)
 class ThresholdRow:
     threshold: float
     false_refusals: int
@@ -260,9 +270,18 @@ def article_recall(required: Sequence[str], found: Sequence[str]) -> float:
 
 # ---------- busca ----------
 
-def retrieve(questions: Sequence[Question], index: Index, embed: EmbedFn, k: int) -> dict[str, list[Hit]]:
+def retrieve(questions: Sequence[Question], index: Index, embed: EmbedFn, k: int, rrf_k: int = 60) -> dict[str, list[Hit]]:
     """Busca os `k` artigos de cada pergunta. Não usa o modelo de chat."""
-    return {q.id: hybrid_search(q.text, index.chunks, index.vectors, embed, k=k) for q in questions}
+    return {q.id: hybrid_search(q.text, index.chunks, index.vectors, embed, k=k, rrf_k=rrf_k) for q in questions}
+
+
+def make_search(index: Index, embed: EmbedFn) -> Callable[[Question, int, int], list[Hit]]:
+    """Cria a função `search(pergunta, k, rrf_k)` usada na varredura da constante do RRF."""
+
+    def search(question: Question, k: int, rrf_k: int) -> list[Hit]:
+        return hybrid_search(question.text, index.chunks, index.vectors, embed, k=k, rrf_k=rrf_k)
+
+    return search
 
 
 def score_retrieval(question: Question, hits: Sequence[Hit], k: int | None = None) -> RetrievalScore:
@@ -285,6 +304,27 @@ def recall_at_k(questions: Sequence[Question], hits_by_id: Mapping[str, Sequence
                 by_group[group] = sum(values) / len(values)
         total = sum(scores.values()) / len(scores) if scores else 0.0
         rows.append(RecallRow(k, by_group, total))
+    return rows
+
+
+def sweep_rrf_k(
+    questions: Sequence[Question],
+    search: Callable[[Question, int, int], Sequence[Hit]],
+    rrf_ks: Sequence[int],
+    ks: Sequence[int],
+) -> list[RrfRow]:
+    """Para cada valor da constante do RRF, mede a recuperação total em cada k.
+
+    Args:
+        questions: As perguntas.
+        search: Função `search(pergunta, k, rrf_k)` que devolve os artigos recuperados.
+        rrf_ks: Valores da constante do RRF a testar.
+        ks: Valores de k em que medir a recuperação.
+    """
+    rows = []
+    for rrf_k in rrf_ks:
+        hits = {q.id: search(q, max(ks), rrf_k) for q in questions}  # busca com o maior k; os menores são prefixo
+        rows.append(RrfRow(rrf_k, {row.k: row.total for row in recall_at_k(questions, hits, ks)}))
     return rows
 
 
@@ -438,12 +478,15 @@ def _decimal(value: float, places: int = 2) -> str:
     return f"{value:.{places}f}".replace(".", ",")
 
 
-def render_report(model: str, k: int, min_similarity: float, scores: Sequence[AnswerScore], today: str) -> str:
+def render_report(
+    model: str, k: int, min_similarity: float, scores: Sequence[AnswerScore], today: str, rrf_k: int = 60
+) -> str:
     """Relatório em Markdown de uma rodada de respostas."""
     lines = [
         f"# Avaliação das respostas — {model}",
         "",
-        f"Data: {today} · modelo de chat: `{model}` · k = {k} · limiar de recusa: {_decimal(min_similarity)}",
+        f"Data: {today} · modelo de chat: `{model}` · k = {k} · constante do RRF: {rrf_k} · "
+        f"limiar de recusa: {_decimal(min_similarity)}",
         "",
         "| Grupo | Perguntas | Corretas | Itens | Citações | Busca | Recusas indevidas | Respostas indevidas "
         "| Citações inexistentes | Tempo médio (s) |",
@@ -496,9 +539,17 @@ def render_retrieval_report(
     ks: Sequence[int],
     thresholds: Sequence[float],
     today: str,
+    rrf_rows: Sequence[RrfRow] | None = None,
+    rrf_k: int = 60,
 ) -> str:
-    """Relatório em Markdown da avaliação da busca: recuperação por k, falhas e varredura do limiar."""
-    lines = ["# Avaliação da busca (sem modelo de chat)", "", f"Data: {today} · k usado nas tabelas de falhas e de limiar: {k}", ""]
+    """Relatório em Markdown da avaliação da busca: recuperação por k, k do RRF, falhas e varredura do limiar."""
+    lines = [
+        "# Avaliação da busca (sem modelo de chat)",
+        "",
+        f"Data: {today} · k usado nas tabelas de falhas e de limiar: {k} · "
+        f"constante do RRF usada nas demais tabelas: {rrf_k}",
+        "",
+    ]
 
     lines += ["## Recuperação dos artigos esperados, por k", ""]
     groups = [g for g in GROUPS if any(q.group == g and q.kind == "answer" for q in questions)]
@@ -506,6 +557,13 @@ def render_retrieval_report(
     for row in recall_at_k(questions, hits_by_id, ks):
         cells = " | ".join(_pct(row.by_group.get(g)) for g in groups)
         lines.append(f"| {row.k} | {cells} | {_pct(row.total)} |")
+
+    if rrf_rows:
+        shown = sorted(rrf_rows[0].recall_by_k)
+        lines += ["", "## Constante k do RRF (recuperação total, perguntas respondíveis)", ""]
+        lines += ["| k do RRF | " + " | ".join(f"k = {n}" for n in shown) + " |", "|---:|" + "---:|" * len(shown)]
+        for row in rrf_rows:
+            lines.append(f"| {row.rrf_k} | " + " | ".join(_pct(row.recall_by_k[n]) for n in shown) + " |")
 
     lines += ["", f"## Perguntas em que falta algum artigo esperado entre os k = {k} primeiros", ""]
     missing_any = False
@@ -548,6 +606,7 @@ def build_parser() -> argparse.ArgumentParser:
     common.add_argument("--host", help="endereço do Ollama")
     common.add_argument("--embed-model", help="modelo de embedding")
     common.add_argument("-k", "--top-k", type=int, help="quantos artigos entram na resposta (padrão: 4)")
+    common.add_argument("--rrf-k", type=int, help="constante do RRF (padrão: 5)")
 
     parser = argparse.ArgumentParser(prog="python -m eval.avaliar", description="Avalia a busca e as respostas do rag-normas.")
     commands = parser.add_subparsers(dest="command", required=True, metavar="{retrieval,answers}")
@@ -558,7 +617,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     answers = commands.add_parser("answers", parents=[common], help="roda as perguntas com o modelo de chat (lento)")
     answers.add_argument("--model", help="modelo de chat (padrão: qwen2.5:3b)")
-    answers.add_argument("--min-similarity", type=float, help="limiar de recusa (padrão: 0.52)")
+    answers.add_argument("--min-similarity", type=float, help="limiar de recusa (padrão: 0.56)")
     answers.add_argument("--only", help="ids separados por vírgula, por exemplo Q01,Q05")
     answers.add_argument("--resume", action="store_true", help="não repete as perguntas já gravadas no arquivo de saída")
     answers.add_argument("--output", type=Path, help="arquivo .jsonl de resultados (padrão: eval/relatorios/respostas-<modelo>-k<k>.jsonl)")
@@ -578,6 +637,7 @@ def main(
             ollama_host=args.host,
             embed_model=args.embed_model,
             top_k=args.top_k,
+            rrf_k=args.rrf_k,
             index_path=args.index,
             chat_model=getattr(args, "model", None),
             min_similarity=getattr(args, "min_similarity", None),
@@ -592,17 +652,33 @@ def main(
         return 1
 
 
+def _memoized(embed: EmbedFn) -> EmbedFn:
+    """Guarda o resultado de cada chamada: o mesmo texto não é enviado ao Ollama duas vezes."""
+    cache: dict[tuple[str, ...], list[list[float]]] = {}
+
+    def wrapper(texts: list[str]) -> list[list[float]]:
+        key = tuple(texts)
+        if key not in cache:
+            cache[key] = embed(texts)
+        return cache[key]
+
+    return wrapper
+
+
 def _write(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
 
 
 def _run_retrieval(args, settings: Settings, index: Index, questions: list[Question], llm_factory) -> int:
-    embed, _ = llm_factory(settings)
+    raw_embed, _ = llm_factory(settings)
+    embed = _memoized(raw_embed)  # a pergunta é a mesma em todas as buscas da varredura: um embedding por pergunta
     max_k = max(args.max_k, settings.top_k)
-    hits = retrieve(questions, index, embed, max_k)
+    hits = retrieve(questions, index, embed, max_k, settings.rrf_k)
+    rrf_rows = sweep_rrf_k(questions, make_search(index, embed), DEFAULT_RRF_KS, RRF_SWEEP_KS)
     report = render_retrieval_report(
-        questions, hits, settings.top_k, list(range(1, max_k + 1)), DEFAULT_THRESHOLDS, date.today().isoformat()
+        questions, hits, settings.top_k, list(range(1, max_k + 1)), DEFAULT_THRESHOLDS, date.today().isoformat(),
+        rrf_rows, settings.rrf_k,
     )
     _write(args.report, report)
     print(report, end="")
@@ -622,7 +698,7 @@ def _run_answers(args, settings: Settings, index: Index, questions: list[Questio
     report_path = args.report or output.with_suffix(".md")
 
     embed, chat = llm_factory(settings)
-    hits = retrieve(questions, index, embed, settings.top_k)
+    hits = retrieve(questions, index, embed, settings.top_k, settings.rrf_k)
 
     def progress(number: int, total: int, score: AnswerScore) -> None:
         print(f"[{number}/{total}] {score.id} {'ok' if score.correct else 'falhou'} ({score.seconds:.0f} s)", file=sys.stderr)
@@ -630,7 +706,9 @@ def _run_answers(args, settings: Settings, index: Index, questions: list[Questio
     scores = run_answers(
         questions, hits, chat, index.chunks, settings.min_similarity, output=output, resume=args.resume, on_progress=progress
     )
-    report = render_report(settings.chat_model, settings.top_k, settings.min_similarity, scores, date.today().isoformat())
+    report = render_report(
+        settings.chat_model, settings.top_k, settings.min_similarity, scores, date.today().isoformat(), settings.rrf_k
+    )
     _write(report_path, report)
     print(report, end="")
     return 0

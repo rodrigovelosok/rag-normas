@@ -26,7 +26,8 @@ def build_parser() -> argparse.ArgumentParser:
     options.add_argument("--model", help="modelo de chat (padrão: qwen2.5:3b)")
     options.add_argument("--embed-model", help="modelo de embedding (padrão: bge-m3)")
     options.add_argument("-k", "--top-k", type=int, help="quantos artigos entram na resposta (padrão: 4)")
-    options.add_argument("--min-similarity", type=float, help="similaridade mínima para responder (padrão: 0.52)")
+    options.add_argument("--rrf-k", type=int, help="constante do RRF, que junta a busca por vetor e por palavras (padrão: 5)")
+    options.add_argument("--min-similarity", type=float, help="similaridade mínima para responder (padrão: 0.56)")
     options.add_argument("--index", type=Path, help="arquivo do índice (padrão: data/index.json)")
     options.add_argument("--corpus", type=Path, help="pasta com os textos das normas (padrão: data/normas)")
 
@@ -64,6 +65,7 @@ def main(
             chat_model=args.model,
             embed_model=args.embed_model,
             top_k=args.top_k,
+            rrf_k=args.rrf_k,
             min_similarity=args.min_similarity,
             index_path=args.index,
             corpus_dir=args.corpus,
@@ -101,7 +103,7 @@ def _run_ask(question: str, settings: Settings, llm_factory: LlmFactory, show_sc
     index = load_index(settings.index_path, expected_model=settings.embed_model)
     embed, chat = llm_factory(settings)
 
-    hits = hybrid_search(question, index.chunks, index.vectors, embed, k=settings.top_k)
+    hits = hybrid_search(question, index.chunks, index.vectors, embed, k=settings.top_k, rrf_k=settings.rrf_k)
     if show_scores:
         print(f"limiar de recusa: {settings.min_similarity:g}", file=sys.stderr)
         for hit in hits:

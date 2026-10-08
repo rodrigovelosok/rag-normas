@@ -160,6 +160,20 @@ def test_hybrid_tie_in_rrf_is_broken_by_the_higher_similarity():
     assert [h.chunk for h in hits] == [p, q]
 
 
+def test_hybrid_rrf_k_sets_the_scale_of_the_scores():
+    # Só o ranking por vetor existe ("zzz" não aparece em nenhum artigo): o 1º lugar vale 1 / (rrf_k + 1).
+    default = hybrid_search("zzz", CHUNKS, VECTORS, make_embed([1.0, 0.0]), k=1)
+    small = hybrid_search("zzz", CHUNKS, VECTORS, make_embed([1.0, 0.0]), k=1, rrf_k=10)
+    assert default[0].score == pytest.approx(1 / 61)
+    assert small[0].score == pytest.approx(1 / 11)
+
+
+@pytest.mark.parametrize("bad", [0, -5])
+def test_hybrid_rejects_an_rrf_k_below_one(bad):
+    with pytest.raises(ValueError, match="rrf_k"):
+        hybrid_search("x", CHUNKS, VECTORS, make_embed([1.0, 0.0]), rrf_k=bad)
+
+
 def test_hybrid_respects_k():
     hits = hybrid_search("xilofone", CHUNKS, VECTORS, make_embed([1.0, 0.0]), k=2)
     assert len(hits) == 2

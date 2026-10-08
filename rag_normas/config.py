@@ -14,6 +14,7 @@ class ConfigError(ValueError):
 # Ficam num só lugar para valer tanto para variável de ambiente quanto para valor passado no código.
 _RULES = {
     "top_k": (int, lambda v: v >= 1, "deve ser um número inteiro maior que 0"),
+    "rrf_k": (int, lambda v: v >= 1, "deve ser um número inteiro maior que 0"),
     "min_similarity": (float, lambda v: 0.0 <= v <= 1.0, "deve ser um número entre 0 e 1"),
     "num_ctx": (int, lambda v: v >= 1, "deve ser um número inteiro maior que 0"),
     "timeout": (float, lambda v: v > 0, "deve ser um número maior que 0"),
@@ -25,6 +26,7 @@ _ENV = {
     "RAG_CHAT_MODEL": "chat_model",
     "RAG_EMBED_MODEL": "embed_model",
     "RAG_TOP_K": "top_k",
+    "RAG_RRF_K": "rrf_k",
     "RAG_MIN_SIMILARITY": "min_similarity",
     "RAG_NUM_CTX": "num_ctx",
     "RAG_TIMEOUT": "timeout",
@@ -43,8 +45,13 @@ class Settings:
         chat_model: Modelo que escreve a resposta.
         embed_model: Modelo que transforma textos em vetores.
         top_k: Quantos artigos entram no contexto da resposta.
+        rrf_k: Constante do RRF, que junta o ranking por vetor com o ranking por palavras. Menor dá mais peso
+            às primeiras posições de cada lista. 5 em vez dos 60 da literatura: na avaliação com 21 perguntas
+            a recuperação em k = 4 subiu de 84% para 97% (eval/relatorios/busca.md e busca-rrf5.md).
         min_similarity: Similaridade mínima para tentar responder; abaixo disso o sistema recusa.
-            PROVISÓRIO: o valor foi estimado com 6 perguntas e será calibrado na Fase 4 (avaliação).
+            0,56 = meio da faixa 0,54 a 0,58, a única sem erro nas 21 perguntas de avaliação (a pergunta recusável
+            mais parecida com o corpus tem 0,536 e a respondível menos parecida, 0,584). Folga pequena: reavaliar
+            ao mudar o corpus, o modelo de embedding ou as perguntas.
         num_ctx: Tamanho da janela de contexto do modelo, em tokens. O padrão do Ollama (4096) é pequeno
             demais para vários artigos longos; o art. 4º da IN 2.091 sozinho tem ~4.100 caracteres.
         timeout: Segundos de espera pela resposta do Ollama. A primeira chamada carrega o modelo e demora.
@@ -56,7 +63,8 @@ class Settings:
     chat_model: str = "qwen2.5:3b"
     embed_model: str = "bge-m3"
     top_k: int = 4
-    min_similarity: float = 0.52
+    rrf_k: int = 5
+    min_similarity: float = 0.56
     num_ctx: int = 8192
     timeout: float = 300.0
     index_path: Path = Path("data/index.json")

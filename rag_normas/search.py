@@ -128,6 +128,7 @@ def hybrid_search(
     vectors: list[list[float]],
     embed: EmbedFn,
     k: int = 4,
+    rrf_k: int = 60,
 ) -> list[Hit]:
     """Acha os `k` artigos mais relevantes para a pergunta, combinando vetor e palavras.
 
@@ -137,13 +138,16 @@ def hybrid_search(
         vectors: Um vetor por artigo, na mesma ordem de `chunks`.
         embed: Função que transforma textos em vetores (o Ollama, ou um falso nos testes).
         k: Quantos artigos devolver.
+        rrf_k: Constante do RRF (veja `rrf`). Menor dá mais peso às primeiras posições de cada lista.
 
     Returns:
         Até `k` Hit, do mais relevante para o menos.
 
     Raises:
-        ValueError: Se `chunks` e `vectors` tiverem quantidades diferentes.
+        ValueError: Se `chunks` e `vectors` tiverem quantidades diferentes ou se `rrf_k` for menor que 1.
     """
+    if rrf_k < 1:
+        raise ValueError(f"rrf_k deve ser pelo menos 1; recebi {rrf_k}")
     if len(chunks) != len(vectors):
         raise ValueError(f"{len(chunks)} artigos para {len(vectors)} vetores: reindexe o corpus")
     if not chunks:
@@ -158,6 +162,6 @@ def hybrid_search(
     # No ranking por palavras só entra quem tem alguma palavra em comum: nota zero não é "relevante"
     by_words = [i for i in sorted(positions, key=lambda i: lexical[i], reverse=True) if lexical[i] > 0]
 
-    fused = rrf([by_vector, by_words])
+    fused = rrf([by_vector, by_words], k=rrf_k)
     best = sorted(positions, key=lambda i: (fused[i], similarities[i]), reverse=True)[:k]
     return [Hit(chunks[i], similarities[i], lexical[i], fused[i]) for i in best]
