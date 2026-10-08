@@ -22,7 +22,29 @@ Registro de onde vem cada texto em `data/normas/`, para o leitor saber o que o `
 **Limitação conhecida:** o **Anexo Único** (formulário de comunicação de alienação, citado no art. 12, § 1º)
 não consta do texto copiado, então o assistente não consegue descrevê-lo.
 
-## Lei nº 9.532/1997, arts. 64 e 64-A
+## Lei nº 9.532/1997, arts. 64 e 64-A — `lei-9532-1997-arts-64-64a.txt`
 
-A extrair do Planalto (<https://www.planalto.gov.br/ccivil_03/leis/l9532.htm>), descartando as redações
-revogadas. Pendente.
+| Item | Valor |
+|---|---|
+| Norma | Lei nº 9.532, de 10 de dezembro de 1997, apenas os arts. 64 e 64-A |
+| Fonte | Portal da Legislação do Planalto: <https://www.planalto.gov.br/ccivil_03/leis/l9532.htm> |
+| Data da cópia | 07/10/2026 |
+| Alterada por | MP 2.158-35/2001, Lei 11.941/2009, Lei 12.973/2014, Lei 13.043/2014, LC 187/2021 |
+
+**Tratamento do texto:**
+
+- Extraído da página oficial por script, removendo o texto **riscado** (redações revogadas: o parágrafo único
+  original do art. 64-A e a redação da MP 449/2008 para o § 1º do art. 64, que não vigora).
+- Sobrou da página uma linha órfã do inciso II da MP 449/2008; foi removida à mão.
+- As anotações de alteração do Planalto foram convertidas para colchetes no fim do dispositivo, como
+  `[Incluído pela Lei nº 12.973/2014]`. Os dispositivos originais de 1997 ficam sem marcação.
+- Os parágrafos foram unidos em uma linha cada (a página quebra o texto no meio das frases).
+
+**Conferência pelo autor (08/10/2026):** § 1º do art. 64 (redação original, sobre o cônjuge) confirmado como o
+vigente. O texto foi comparado com a impressão do Planalto de 03/12/2020: coincide, exceto pelo § 13 do art. 64
+(fundações; LC 187/2021), que é posterior a essa impressão e está presente aqui por ter sido extraído da página
+atual.
+
+**Atenção — valor de corte:** o § 7º do art. 64 fala em R$ 500.000,00, mas o limite aplicado pela IN 2.091 é de
+R$ 2.000.000,00 (art. 2º, II), elevado pelo Decreto nº 7.573/2011, que **não** faz parte do corpus da v1.0.
+Ver `docs/arquitetura.md`, decisão em aberto 3.
