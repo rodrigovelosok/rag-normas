@@ -1,6 +1,7 @@
 """Testes do índice (RF03): construção em lotes, gravação atômica e leitura com checagens."""
 
 import json
+from dataclasses import replace
 from datetime import datetime
 
 import pytest
@@ -95,6 +96,13 @@ def test_saved_file_has_the_documented_layout(tmp_path, index):
 def test_save_leaves_no_temporary_file_behind(tmp_path, index):
     save_index(index, tmp_path / "index.json")
     assert [p.name for p in tmp_path.iterdir()] == ["index.json"]
+
+
+def test_save_refuses_an_index_with_more_chunks_than_vectors(tmp_path, index):
+    broken = replace(index, vectors=index.vectors[:-1])  # um artigo ficou sem vetor
+    with pytest.raises(ValueError):
+        save_index(broken, tmp_path / "index.json")
+    assert list(tmp_path.iterdir()) == []  # nada gravado: nem o índice cortado, nem o temporário
 
 
 def test_save_replaces_an_existing_index(tmp_path, index):

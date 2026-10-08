@@ -83,7 +83,7 @@ def save_index(index: Index, path: Path) -> None:
         "created_at": index.created_at,
         "chunks": [
             {"norm": c.norm, "article": c.article, "section": c.section, "text": c.text, "vector": v}
-            for c, v in zip(index.chunks, index.vectors)
+            for c, v in zip(index.chunks, index.vectors, strict=True)  # strict: quantidades diferentes viram erro
         ],
     }
     path.parent.mkdir(parents=True, exist_ok=True)
