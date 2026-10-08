@@ -65,23 +65,25 @@ rag-normas/
 
 ## 3. Dados
 
-**`Chunk`** (um artigo): `norma` (ex.: `IN RFB 2.091/2022`), `artigo` (ex.: `"64-A"`), `texto` (o artigo
-completo, com parágrafos e incisos), `vetor` (lista de 1024 números, só depois de indexado).
+**`Chunk`** (um artigo, definido em `ingest.py`): `norm` (ex.: `IN RFB 2.091/2022`), `article` (ex.: `"64-A"`),
+`section` (capítulo e seção em que está) e `text` (o artigo completo, com parágrafos e incisos). A propriedade
+`reference` monta a referência jurídica (`IN RFB 2.091/2022, art. 5º`). O **vetor não faz parte do `Chunk`**: ele
+é calculado e guardado pelo `index.py`.
 
 **`data/index.json`:**
 
 ```json
 {
-  "modelo_embedding": "bge-m3",
-  "criado_em": "2026-10-08T10:00:00",
+  "embedding_model": "bge-m3",
+  "created_at": "2026-10-08T10:00:00",
   "chunks": [
-    {"norma": "IN RFB 2.091/2022", "artigo": "2", "texto": "Art. 2º A Secretaria ...", "vetor": [0.01, -0.02]}
+    {"norm": "IN RFB 2.091/2022", "article": "2", "section": "Capítulo II — ...", "text": "Art. 2º A Secretaria ...", "vector": [0.01, -0.02]}
   ]
 }
 ```
 
 Guardar o nome do modelo de embedding no índice permite avisar o usuário se ele trocar o modelo e esquecer de
-reindexar (vetores de modelos diferentes não são comparáveis).
+reindexar (vetores de modelos diferentes não são comparáveis). Nomes de campos em inglês, como o RNF05 pede.
 
 ## 4. Fluxo de `ask`
 
