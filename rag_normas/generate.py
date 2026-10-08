@@ -52,8 +52,8 @@ class Answer:
         sources: Referências dos artigos que o modelo recebeu (RF06); vazio na recusa.
         invalid_citations: Citadas na resposta, mas cujo artigo NÃO existe no índice (RF10). O modelo inventou.
         unretrieved_citations: Citadas e existentes no índice, mas que não estavam entre os artigos
-            recuperados. Não vira aviso; fica registrado para a Fase 4 medir quantas respostas
-            a verificação mais forte reprovaria.
+            recuperados. Não vira aviso. Medido nas rodadas da Fase 4: 1 caso em 65 respostas
+            (3b com a configuração antiga) e nenhum com a configuração calibrada.
         uncited: True se a resposta não traz nenhuma citação no formato `[Fonte: ...]` (viola G1).
     """
 

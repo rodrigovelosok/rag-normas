@@ -106,7 +106,8 @@ def rrf(rankings: list[list[int]], k: int = 60) -> dict[int, float]:
 
     Cada lista dá a cada item `1 / (k + posição)`; quem aparece bem em mais listas soma mais. Usar a
     posição (e não a nota) evita misturar escalas diferentes, como cosseno (-1 a 1) e BM25 (0 a 10+).
-    O `k = 60` é o valor padrão da literatura; vamos calibrá-lo na avaliação (Fase 4).
+    O `k = 60` é o valor padrão da literatura. Neste corpus, a avaliação (Fase 4) mostrou que 5 recupera mais
+    artigos esperados; por isso o padrão do produto é 5 (`Settings.rrf_k`), e 60 fica só como padrão da função.
 
     Args:
         rankings: Cada lista traz os índices dos itens, do melhor para o pior.
