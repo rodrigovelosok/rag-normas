@@ -1,0 +1,195 @@
+[
+  {
+    "id": "Q01", "group": "combined", "kind": "answer",
+    "question": "Qual o valor mínimo de débitos para o arrolamento?",
+    "articles": ["IN RFB 2.091/2022, art. 2º", "Decreto 7.573/2011, art. 1º"],
+    "items": [
+      {"label": "R$ 2 milhões", "any_of": ["2[.]000[.]000", "2 milh", "dois milh"]},
+      {"label": "30% do patrimônio conhecido", "any_of": ["30 ?%", "trinta por cento"]},
+      {"label": "os dois limites ao mesmo tempo", "any_of": ["simultane", "ao mesmo tempo", "ambos os", "cumulativ"]}
+    ]
+  },
+  {
+    "id": "Q02", "group": "list", "kind": "answer",
+    "question": "O que é considerado patrimônio conhecido para fins do arrolamento?",
+    "articles": ["IN RFB 2.091/2022, art. 3º"],
+    "items": [
+      {"label": "PF: última DIRPF (ficha de bens e direitos)", "any_of": ["dirpf", "declaracao de ajuste", "ficha de bens"]},
+      {"label": "PF: sem deduzir dívidas e ônus", "any_of": ["sem (a )?deduc", "sem deduzir", "nao (se )?deduz", "desconsider.{0,40}(divida|onus)"]},
+      {"label": "PF: exclui bens de dependentes", "any_of": ["dependente"]},
+      {"label": "PF: inclui bens do cônjuge/companheiro", "any_of": ["conjuge", "companheir"]},
+      {"label": "PJ: total do ativo do último balanço", "any_of": ["total do ativo", "ativo.{0,60}balanco", "balanco.{0,60}ativo"]}
+    ]
+  },
+  {
+    "id": "Q03", "group": "list", "kind": "answer",
+    "question": "Em que ordem os bens são arrolados?",
+    "articles": ["IN RFB 2.091/2022, art. 7º"],
+    "items": [
+      {"label": "1º imóveis não gravados", "any_of": ["imoveis? nao gravados?"]},
+      {"label": "2º imóveis gravados", "any_of": ["imoveis? gravados?", "imoveis? com (onus|gravame)"]},
+      {"label": "3º demais bens passíveis de registro público", "any_of": ["demais bens", "passiveis de registro", "suscetiveis de registro"]},
+      {"label": "4º excepcionalmente, bens sem registro público", "any_of": ["excepcional", "nao sujeitos a registro", "sem registro"]},
+      {"label": "a ordem pode ser alterada por ato fundamentado", "any_of": ["alterad", "fundamentad"]}
+    ]
+  },
+  {
+    "id": "Q04", "group": "list", "kind": "answer",
+    "question": "Quais bens não podem ser arrolados?",
+    "articles": ["IN RFB 2.091/2022, art. 8º"],
+    "items": [
+      {"label": "bens da Fazenda pública e de autarquias/fundações", "any_of": ["fazenda", "autarquia", "fundac"]},
+      {"label": "empresa com falência decretada", "any_of": ["falencia"]},
+      {"label": "instituições em liquidação extrajudicial", "any_of": ["liquidacao extrajudicial"]}
+    ]
+  },
+  {
+    "id": "Q05", "group": "fact", "kind": "answer",
+    "question": "Qual o prazo para comunicar a venda de um bem arrolado?",
+    "articles": ["IN RFB 2.091/2022, art. 12"],
+    "items": [
+      {"label": "cinco dias", "any_of": ["cinco dias", "5 dias", "5 [(]cinco[)] dias"]},
+      {"label": "contado da ocorrência do fato", "any_of": ["ocorrencia", "data do fato", "contad"]}
+    ]
+  },
+  {
+    "id": "Q06", "group": "list", "kind": "answer",
+    "question": "Em que situações o arrolamento é cancelado?",
+    "articles": ["IN RFB 2.091/2022, art. 16", "IN RFB 2.091/2022, art. 17"],
+    "items": [
+      {"label": "extinção do crédito tributário", "any_of": ["extincao"]},
+      {"label": "garantia da execução (Lei 6.830)", "any_of": ["garantia da execucao", "garantia.{0,30}execucao"]},
+      {"label": "fiança bancária ou seguro-garantia", "any_of": ["fianca", "seguro.?garantia"]},
+      {"label": "desapropriação", "any_of": ["desapropria"]},
+      {"label": "perda total do bem", "any_of": ["perda total", "roubo", "furto"]},
+      {"label": "expropriação judicial (arrematação, adjudicação)", "any_of": ["expropria", "arremata", "adjudica"]},
+      {"label": "ordem judicial", "any_of": ["ordem judicial"]}
+    ]
+  },
+  {
+    "id": "Q07", "group": "fact", "kind": "answer",
+    "question": "Qual o prazo para recorrer no processo de arrolamento?",
+    "articles": ["IN RFB 2.091/2022, art. 21"],
+    "items": [
+      {"label": "10 dias", "any_of": ["10 dias", "dez dias", "10 [(]dez[)] dias"]},
+      {"label": "contados da ciência da decisão", "any_of": ["ciencia"]}
+    ]
+  },
+  {
+    "id": "Q08", "group": "fact", "kind": "answer",
+    "question": "Em quanto tempo o cartório deve liberar o bem após a comunicação?",
+    "articles": ["IN RFB 2.091/2022, art. 13"],
+    "items": [
+      {"label": "30 dias", "any_of": ["30 dias", "trinta dias", "30 [(]trinta[)] dias"]},
+      {"label": "independe de autorização da RFB", "any_of": ["independ", "sem (a )?autoriza", "nao depende"]}
+    ]
+  },
+  {
+    "id": "Q09", "group": "list", "kind": "answer",
+    "question": "Como o contribuinte pede a avaliação do bem por perito?",
+    "articles": ["IN RFB 2.091/2022, art. 5º"],
+    "items": [
+      {"label": "iniciativa do sujeito passivo", "any_of": ["sujeito passivo", "contribuinte", "interessado"]},
+      {"label": "intervalo mínimo de 1 ano", "any_of": ["1 [(]um[)] ano", "um ano", "1 ano", "12 meses"]},
+      {"label": "perito indicado pelo órgão de registro público", "any_of": ["orgao de registro"]},
+      {"label": "petição com laudo ou parecer de avaliação", "any_of": ["laudo", "parecer tecnico"]}
+    ]
+  },
+  {
+    "id": "Q10", "group": "fact", "kind": "answer",
+    "question": "Se o limite de valor mudar, os arrolamentos antigos são revistos?",
+    "articles": ["IN RFB 2.091/2022, art. 25"],
+    "items": [
+      {"label": "não cabe revisão", "any_of": ["nao cabe(ra)? revisao", "nao (ha|sera|serao|sao) revis", "nao (e|sera) (possivel|cabivel)"]}
+    ]
+  },
+  {
+    "id": "Q11", "group": "fact", "kind": "answer",
+    "question": "Quem faz o arrolamento e como o contribuinte é avisado?",
+    "articles": ["IN RFB 2.091/2022, art. 9º"],
+    "items": [
+      {"label": "Auditor-Fiscal da Receita Federal", "any_of": ["auditor.?fiscal"]},
+      {"label": "Termo de Arrolamento de Bens e Direitos (TABD)", "any_of": ["tabd", "termo de arrolamento"]}
+    ]
+  },
+  {
+    "id": "Q12", "group": "combined", "kind": "answer",
+    "question": "Posso vender meu imóvel arrolado sem avisar a Receita?",
+    "articles": ["IN RFB 2.091/2022, art. 12"],
+    "items": [
+      {"label": "é preciso comunicar à Receita", "any_of": ["comunic"]},
+      {"label": "no prazo de cinco dias", "any_of": ["cinco dias", "5 dias", "5 [(]cinco[)] dias"]},
+      {"label": "sob pena de medida cautelar fiscal", "any_of": ["medida cautelar"]}
+    ]
+  },
+  {
+    "id": "Q13", "group": "combined", "kind": "answer",
+    "question": "O que a Lei 9.532 diz sobre o limite de R$ 500 mil?",
+    "articles": ["Lei 9.532/1997, art. 64", "Decreto 7.573/2011, art. 1º"],
+    "items": [
+      {"label": "a Lei fala em R$ 500 mil", "any_of": ["500[.]000", "500 mil", "quinhentos mil"]},
+      {"label": "o limite foi alterado por decreto", "any_of": ["decreto"]},
+      {"label": "o limite atual é R$ 2 milhões", "any_of": ["2[.]000[.]000", "2 milh", "dois milh"]}
+    ]
+  },
+  {
+    "id": "Q14", "group": "hard", "kind": "answer",
+    "question": "Os bens em nome do cônjuge entram no cálculo do patrimônio conhecido e podem ser arrolados? E se o casal vive em união estável?",
+    "articles": ["IN RFB 2.091/2022, art. 3º", "IN RFB 2.091/2022, art. 6º", "Lei 9.532/1997, art. 64"],
+    "items": [
+      {"label": "bens do cônjuge/companheiro entram no patrimônio conhecido", "any_of": ["patrimonio conhecido.{0,250}(conjuge|companheir)", "(conjuge|companheir).{0,250}patrimonio conhecido"]},
+      {"label": "bens de dependentes não entram", "any_of": ["dependente"]},
+      {"label": "arrolam-se os adquiridos na constância da união", "any_of": ["constancia da uniao", "adquirid"]},
+      {"label": "exceto os com cláusula de incomunicabilidade", "any_of": ["incomunicabilidade"]},
+      {"label": "união estável: vale o contrato escrito por escritura pública", "any_of": ["escritura publica", "contrato escrito"]}
+    ]
+  },
+  {
+    "id": "Q15", "group": "hard", "kind": "answer",
+    "question": "Como os limites do arrolamento são apurados quando há devedores solidários, e o que muda quando a responsabilidade é subsidiária?",
+    "articles": ["IN RFB 2.091/2022, art. 2º"],
+    "items": [
+      {"label": "limites apurados individualmente por devedor", "any_of": ["individualmente", "cada devedor"]},
+      {"label": "somam-se débitos próprios e por solidariedade", "any_of": ["debitos proprios", "por solidariedade"]},
+      {"label": "o arrolado por solidariedade fica limitado ao débito", "any_of": ["limitad.{0,80}(debito|montante)", "montante do debito"]},
+      {"label": "subsidiária (CTN 133, II): só bens do sucedido", "any_of": ["sucedid"]},
+      {"label": "subsidiária (CTN 134): bens do responsável só se insuficientes os do devedor", "any_of": ["insuficiente"]}
+    ]
+  },
+  {
+    "id": "Q16", "group": "hard", "kind": "answer",
+    "question": "Um devedor solidário que teve bens arrolados pode pedir que sejam arrolados, no lugar deles, bens do devedor principal? Quem precisa assinar o pedido, e o devedor principal precisa atingir os limites do arrolamento?",
+    "articles": ["IN RFB 2.091/2022, art. 15"],
+    "items": [
+      {"label": "a substituição é admitida, a pedido", "any_of": ["substitu.{0,120}principal", "principal.{0,120}substitu"]},
+      {"label": "vale mesmo que o principal não se enquadre nos requisitos", "any_of": ["ainda que.{0,60}nao se enquadre", "mesmo que.{0,60}nao (se )?enquadr", "nao (precisa|necessita|e necessario).{0,60}(enquadr|requisit|atender)", "independe.{0,60}(enquadr|requisit)"]},
+      {"label": "pedido subscrito pelos dois devedores", "any_of": ["ambos os devedores", "subscrit", "assinad", "dois devedores", "devedores principal e solidario"]},
+      {"label": "pode ser feito já no primeiro momento do arrolamento", "any_of": ["primeiro momento", "desde o (inicio|primeiro)", "no inicio do arrolamento"]}
+    ]
+  },
+  {
+    "id": "Q17", "group": "out_of_corpus", "kind": "refuse",
+    "question": "Qual a alíquota do IRPF?",
+    "articles": [], "items": []
+  },
+  {
+    "id": "Q18", "group": "out_of_corpus", "kind": "refuse",
+    "question": "Quais os prazos para parcelar débitos federais?",
+    "articles": [], "items": []
+  },
+  {
+    "id": "Q19", "group": "out_of_corpus", "kind": "refuse",
+    "question": "Qual a multa por sonegação fiscal?",
+    "articles": [], "items": []
+  },
+  {
+    "id": "Q20", "group": "out_of_corpus", "kind": "refuse",
+    "question": "Como funciona a penhora de bens na execução fiscal?",
+    "articles": [], "items": []
+  },
+  {
+    "id": "Q21", "group": "out_of_corpus", "kind": "refuse",
+    "question": "Qual a capital do Brasil?",
+    "articles": [], "items": []
+  }
+]
