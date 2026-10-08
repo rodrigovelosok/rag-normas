@@ -108,15 +108,15 @@ def answer(
         return _refusal()
 
     cited = extract_citations(reply)
-    in_index = {_article_key(chunk.reference) for chunk in index_chunks}
-    retrieved = {_article_key(hit.chunk.reference) for hit in hits}
+    in_index = {article_key(chunk.reference) for chunk in index_chunks}
+    retrieved = {article_key(hit.chunk.reference) for hit in hits}
     return Answer(
         text=reply,
         refused=False,
         sources=[hit.chunk.reference for hit in hits],
-        invalid_citations=[ref for ref in cited if _article_key(ref) not in in_index],
+        invalid_citations=[ref for ref in cited if article_key(ref) not in in_index],
         unretrieved_citations=[
-            ref for ref in cited if _article_key(ref) in in_index and _article_key(ref) not in retrieved
+            ref for ref in cited if article_key(ref) in in_index and article_key(ref) not in retrieved
         ],
         uncited=not cited,
     )
@@ -136,7 +136,7 @@ def format_output(result: Answer) -> str:
     return "\n\n".join(parts)
 
 
-def _article_key(reference: str) -> str:
+def article_key(reference: str) -> str:
     """Identifica o artigo de uma referência, ignorando parágrafo, inciso e o "º".
 
     O modelo cita com mais precisão do que o índice ("art. 11, § 6º"); a conferência é por artigo, então
