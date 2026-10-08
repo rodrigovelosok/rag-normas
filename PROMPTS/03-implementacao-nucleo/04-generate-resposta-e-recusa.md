@@ -69,10 +69,10 @@ realidade com o Ollama.
 
 ## Resultado
 
-Gerados `generate.py` e `tests/test_generate.py` (28 testes; 117 no total depois do ajuste de prompt abaixo).
-Ciclo TDD: vermelho (módulo inexistente), verde na primeira execução. **Teste de mutação: 21 alterações
-propositais, todas detectadas** (duas precisaram ser refeitas porque meu script de mutação escapava mal as
-quebras de linha; o defeito era do script, não do código).
+Gerados `generate.py` e `tests/test_generate.py` (36 testes; 124 no total). Ciclo TDD: vermelho (módulo
+inexistente), verde na primeira execução. Primeira rodada de **teste de mutação: 21 alterações propositais, todas
+detectadas** (duas precisaram ser refeitas porque meu script de mutação escapava mal as quebras de linha; o
+defeito era do script, não do código). Depois dos ajustes de prompt e de citação descritos abaixo, nova rodada.
 
 **Achado do teste com o Ollama real (o mais importante desta etapa).** Na primeira versão, o prompt de sistema
 ensinava ao modelo a frase de recusa ("se os fragmentos não responderem, responda exatamente: ..."). Resultado com o
