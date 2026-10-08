@@ -1,0 +1,13 @@
+# Linter e formatador do projeto (ruff). Antes de cada commit:
+#   python -m ruff check .          aponta erros prováveis e estilo
+#   python -m ruff format --check . confere a formatação (sem --check, formata)
+line-length = 120
+target-version = "py314"
+
+[lint]
+# E/W: estilo PEP 8 · F: erros (nome indefinido, importação sem uso) · I: ordem das importações
+# B: armadilhas comuns (bugbear) · UP: sintaxe moderna do Python · SIM: simplificações
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+
+[lint.isort]
+known-first-party = ["rag_normas", "eval"]

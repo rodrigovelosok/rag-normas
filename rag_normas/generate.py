@@ -19,7 +19,9 @@ DISCLAIMER = "Ferramenta de estudo. Não substitui a leitura da norma nem consti
 # Atenção: o prompt NÃO ensina ao modelo a frase de recusa. Em teste com o qwen2.5:3b, qualquer regra do tipo
 # "se os fragmentos não responderem, diga X" fez o modelo recusar também perguntas que a norma responde
 # (PROMPTS/03-implementacao-nucleo/04-generate-resposta-e-recusa.md). Quem decide recusar é o código, pelo limiar.
-SYSTEM_PROMPT = """Você responde perguntas sobre normas brasileiras de arrolamento de bens, usando apenas os fragmentos fornecidos.
+# A barra no fim da 1ª linha junta as duas linhas do código numa só linha do prompt (o texto não muda).
+SYSTEM_PROMPT = """Você responde perguntas sobre normas brasileiras de arrolamento de bens, \
+usando apenas os fragmentos fornecidos.
 
 Como responder:
 - Leia os fragmentos e responda à pergunta com o que eles dizem, em português, em poucas frases.
@@ -129,9 +131,15 @@ def format_output(result: Answer) -> str:
         parts.append("Fontes consultadas:\n" + "\n".join(f"- {source}" for source in result.sources))
     if result.invalid_citations:
         cited = "; ".join(result.invalid_citations)
-        parts.append(f"ATENÇÃO: a resposta cita artigo que não consta no índice ({cited}). Não confie nessa citação; confira na norma.")
+        parts.append(
+            f"ATENÇÃO: a resposta cita artigo que não consta no índice ({cited}). "
+            "Não confie nessa citação; confira na norma."
+        )
     if result.uncited:
-        parts.append("ATENÇÃO: a resposta não traz nenhuma citação no formato [Fonte: ...]. Confira nas fontes consultadas antes de usar.")
+        parts.append(
+            "ATENÇÃO: a resposta não traz nenhuma citação no formato [Fonte: ...]. "
+            "Confira nas fontes consultadas antes de usar."
+        )
     parts.append(DISCLAIMER)
     return "\n\n".join(parts)
 
@@ -147,4 +155,6 @@ def article_key(reference: str) -> str:
 
 
 def _refusal() -> Answer:
-    return Answer(REFUSAL_MESSAGE, refused=True, sources=[], invalid_citations=[], unretrieved_citations=[], uncited=False)
+    return Answer(
+        REFUSAL_MESSAGE, refused=True, sources=[], invalid_citations=[], unretrieved_citations=[], uncited=False
+    )

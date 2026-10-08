@@ -15,6 +15,7 @@ CORPUS_DIR = Path(__file__).resolve().parent.parent / "data" / "normas"
 
 # ---------- tokenize ----------
 
+
 def test_tokenize_lowercases_and_removes_accents():
     assert tokenize("Alienação, ONERAÇÃO!") == ["alienacao", "oneracao"]
 
@@ -32,6 +33,7 @@ def test_tokenize_empty_text_gives_empty_list():
 
 
 # ---------- cosine ----------
+
 
 def test_cosine_of_identical_vectors_is_one():
     assert cosine([1.0, 2.0, 3.0], [1.0, 2.0, 3.0]) == pytest.approx(1.0)
@@ -99,6 +101,7 @@ def test_bm25_without_documents_gives_empty_list():
 
 
 # ---------- rrf ----------
+
 
 def test_rrf_single_list_uses_one_over_k_plus_position():
     assert rrf([[5, 7]], k=10) == {5: pytest.approx(1 / 11), 7: pytest.approx(1 / 12)}
@@ -206,6 +209,7 @@ def test_hybrid_without_chunks_gives_empty_list():
 
 
 # ---------- BM25 sobre o corpus real ----------
+
 
 def test_bm25_finds_the_article_that_introduced_the_selo_confia_rule():
     # O art. 10 ganhou os §§ 4º a 8º (Selo Confia/Sintonia) pela IN 2.338/2026.

@@ -1,12 +1,13 @@
 """Testes da geração (RF05–RF07, RF10, G1–G3): prompt, recusa, conferência das citações e saída."""
 
+from dataclasses import FrozenInstanceError
+
 import pytest
 
 from rag_normas.generate import (
     DISCLAIMER,
     REFUSAL_MESSAGE,
     REMINDER,
-    Answer,
     answer,
     build_messages,
     extract_citations,
@@ -15,7 +16,12 @@ from rag_normas.generate import (
 from rag_normas.ingest import Chunk
 from rag_normas.search import Hit
 
-IN_2 = Chunk("IN RFB 2.091/2022", "2", "", "Art. 2º O arrolamento é feito quando o total dos débitos for superior a R$ 2.000.000,00.")
+IN_2 = Chunk(
+    "IN RFB 2.091/2022",
+    "2",
+    "",
+    "Art. 2º O arrolamento é feito quando o total dos débitos for superior a R$ 2.000.000,00.",
+)
 IN_5 = Chunk("IN RFB 2.091/2022", "5", "", "Art. 5º O arrolamento recai sobre bens suficientes.")
 LEI_64A = Chunk("Lei 9.532/1997", "64-A", "", "Art. 64-A. O registro do arrolamento nos órgãos competentes.")
 DECREE_1 = Chunk("Decreto 7.573/2011", "1", "", "Art. 1º O valor do crédito passa a ser de R$ 2.000.000,00.")
@@ -45,6 +51,7 @@ def run(hits, chat=None, min_similarity=0.52, question="Quando o arrolamento é 
 
 # ---------- build_messages ----------
 
+
 def test_build_messages_has_system_then_user():
     messages = build_messages("Pergunta?", [hit(IN_2)])
     assert [m["role"] for m in messages] == ["system", "user"]
@@ -69,7 +76,9 @@ def test_user_message_labels_each_fragment_in_order_then_asks_the_question():
     label_decree = f"[Fonte: {DECREE_1.reference}]\n{DECREE_1.text}"
     assert label_2 in user and label_decree in user
     assert user.index(label_2) < user.index(label_decree)  # mesma ordem dos hits
-    assert user.index("Pergunta: Qual o valor mínimo?") > user.index(label_decree)  # a pergunta vem depois dos fragmentos
+    assert user.index("Pergunta: Qual o valor mínimo?") > user.index(
+        label_decree
+    )  # a pergunta vem depois dos fragmentos
 
 
 def test_user_message_ends_with_the_citation_reminder():
@@ -81,12 +90,16 @@ def test_user_message_ends_with_the_citation_reminder():
 
 # ---------- extract_citations ----------
 
+
 def test_extract_finds_one_citation():
     assert extract_citations("Vale R$ 2 milhões. [Fonte: IN RFB 2.091/2022, art. 2º]") == ["IN RFB 2.091/2022, art. 2º"]
 
 
 def test_extract_keeps_order_and_drops_repeats():
-    text = "A [Fonte: Lei 9.532/1997, art. 64-A] B [Fonte: IN RFB 2.091/2022, art. 5º] C [Fonte: Lei 9.532/1997, art. 64-A]"
+    text = (
+        "A [Fonte: Lei 9.532/1997, art. 64-A] B [Fonte: IN RFB 2.091/2022, art. 5º] "
+        "C [Fonte: Lei 9.532/1997, art. 64-A]"
+    )
     assert extract_citations(text) == ["Lei 9.532/1997, art. 64-A", "IN RFB 2.091/2022, art. 5º"]
 
 
@@ -116,6 +129,7 @@ def test_extract_on_empty_text():
 
 
 # ---------- answer: recusa (RF07, G2) ----------
+
 
 def test_refuses_without_hits_and_does_not_call_chat():
     result, chat = run([])
@@ -151,6 +165,7 @@ def test_model_that_replies_the_refusal_is_a_refusal():
 
 # ---------- answer: resposta normal ----------
 
+
 def test_normal_answer_returns_text_and_consulted_sources():
     result, chat = run([hit(IN_2), hit(DECREE_1)], chat=FakeChat("  Sim. [Fonte: IN RFB 2.091/2022, art. 2º]\n"))
     assert not result.refused
@@ -166,6 +181,7 @@ def test_chat_receives_exactly_the_built_messages():
 
 
 # ---------- answer: conferência das citações (RF10, G1) ----------
+
 
 def test_citation_of_an_article_that_is_not_in_the_index_is_invalid():
     chat = FakeChat("Texto. [Fonte: IN RFB 2.091/2022, art. 99]")
@@ -234,6 +250,7 @@ def test_answer_without_any_citation_is_flagged():
 
 # ---------- format_output (RF06, G3) ----------
 
+
 def test_output_of_an_answer_lists_sources_and_ends_with_disclaimer():
     result, _ = run([hit(IN_2), hit(DECREE_1)])
     output = format_output(result)
@@ -276,5 +293,5 @@ def test_output_has_no_warning_for_a_clean_answer_or_an_unretrieved_citation():
 
 def test_answer_is_immutable():
     result, _ = run([hit(IN_2)])
-    with pytest.raises(Exception):
+    with pytest.raises(FrozenInstanceError):
         result.text = "outro"  # type: ignore[misc]

@@ -86,6 +86,7 @@ GOOD_REPLY = "O limite é de 30% do patrimônio e R$ 2.000.000. [Fonte: IN RFB 2
 
 # ---------- gabarito: validação ----------
 
+
 def write_questions(tmp_path, entries) -> Path:
     path = tmp_path / "perguntas.json"
     path.write_text(json.dumps(entries, ensure_ascii=False), encoding="utf-8")
@@ -94,8 +95,12 @@ def write_questions(tmp_path, entries) -> Path:
 
 def entry(**changes) -> dict:
     base = {
-        "id": "Q01", "group": "fact", "kind": "answer", "question": "Pergunta?",
-        "articles": [ART_2], "items": [{"label": "x", "any_of": ["x"]}],
+        "id": "Q01",
+        "group": "fact",
+        "kind": "answer",
+        "question": "Pergunta?",
+        "articles": [ART_2],
+        "items": [{"label": "x", "any_of": ["x"]}],
     }
     base.update(changes)
     return base
@@ -161,6 +166,7 @@ def test_missing_or_broken_file_is_a_questions_error(tmp_path):
 
 # ---------- texto: fold, citações, itens ----------
 
+
 def test_fold_removes_accents_and_case():
     assert fold("Extinção do CRÉDITO") == "extincao do credito"
 
@@ -197,6 +203,7 @@ def test_match_items_without_items_is_empty():
 
 # ---------- artigos ----------
 
+
 def test_article_recall_is_a_fraction_of_the_required_articles():
     assert article_recall([ART_2, DECREE], [ART_2]) == 0.5
     assert article_recall([ART_2, DECREE], [DECREE, ART_2, ART_5]) == 1.0
@@ -212,6 +219,7 @@ def test_article_recall_ignores_paragraph_and_ordinal_sign():
 
 
 # ---------- recuperação ----------
+
 
 def test_score_retrieval_reports_recall_best_similarity_and_references():
     hits = [hit(CHUNK_5, 0.4), hit(CHUNK_2, 0.65)]
@@ -252,12 +260,21 @@ def test_sweep_threshold_counts_both_kinds_of_error():
     answerable = [question(id="Q01"), question(id="Q03")]
     refusable = [question(id="Q04", kind="refuse", group="out_of_corpus", articles=(), items=()), REFUSE_Q]
     hits = {
-        "Q01": [hit(CHUNK_2, 0.60)], "Q03": [hit(CHUNK_2, 0.50)],
-        "Q04": [hit(CHUNK_5, 0.45)], "Q02": [hit(CHUNK_5, 0.55)],
+        "Q01": [hit(CHUNK_2, 0.60)],
+        "Q03": [hit(CHUNK_2, 0.50)],
+        "Q04": [hit(CHUNK_5, 0.45)],
+        "Q02": [hit(CHUNK_5, 0.55)],
     }
-    rows = {row.threshold: row for row in sweep_threshold(answerable + refusable, hits, [0.4, 0.5, 0.52, 0.55, 0.56, 0.7], k=4)}
-    assert (rows[0.55].false_refusals, rows[0.55].missed_refusals) == (1, 1)  # 0,55 >= 0,55 conta como resposta indevida
-    # recusa indevida = pergunta respondível com similaridade < limiar; resposta indevida = recusável com similaridade >= limiar
+    rows = {
+        row.threshold: row
+        for row in sweep_threshold(answerable + refusable, hits, [0.4, 0.5, 0.52, 0.55, 0.56, 0.7], k=4)
+    }
+    assert (rows[0.55].false_refusals, rows[0.55].missed_refusals) == (
+        1,
+        1,
+    )  # 0,55 >= 0,55 conta como resposta indevida
+    # recusa indevida = pergunta respondível com similaridade < limiar;
+    # resposta indevida = recusável com similaridade >= limiar
     assert (rows[0.4].false_refusals, rows[0.4].missed_refusals) == (0, 2)
     assert (rows[0.5].false_refusals, rows[0.5].missed_refusals) == (0, 1)  # 0,50 não é < 0,50
     assert (rows[0.52].false_refusals, rows[0.52].missed_refusals) == (1, 1)
@@ -288,7 +305,10 @@ def test_sweep_rrf_k_ignores_questions_that_must_be_refused():
 
 
 def test_retrieve_uses_the_given_rrf_k():
-    chunks = [Chunk("norma-teste", "1", "", "Art. 1º Texto sobre arrolamento."), Chunk("norma-teste", "2", "", "Art. 2º Outro assunto.")]
+    chunks = [
+        Chunk("norma-teste", "1", "", "Art. 1º Texto sobre arrolamento."),
+        Chunk("norma-teste", "2", "", "Art. 2º Outro assunto."),
+    ]
     index = build_index(chunks, fake_embed, "bge-m3")
     q = question(text="arrolamento")
     assert retrieve([q], index, fake_embed, 1, rrf_k=10)["Q01"][0].score == pytest.approx(2 / 11)
@@ -296,7 +316,10 @@ def test_retrieve_uses_the_given_rrf_k():
 
 
 def test_make_search_passes_k_and_rrf_k_to_the_hybrid_search():
-    chunks = [Chunk("norma-teste", "1", "", "Art. 1º Texto sobre arrolamento."), Chunk("norma-teste", "2", "", "Art. 2º Outro assunto.")]
+    chunks = [
+        Chunk("norma-teste", "1", "", "Art. 1º Texto sobre arrolamento."),
+        Chunk("norma-teste", "2", "", "Art. 2º Outro assunto."),
+    ]
     index = build_index(chunks, fake_embed, "bge-m3")
     search = make_search(index, fake_embed)
     q = question(text="arrolamento")
@@ -313,7 +336,9 @@ def test_retrieval_report_has_the_rrf_section_only_when_rows_are_given():
     assert "k do RRF" not in without
     assert "constante do RRF usada nas demais tabelas: 60" in without
     assert "constante do RRF usada nas demais tabelas: 7" in render_retrieval_report(*args, **kwargs, rrf_k=7)
-    with_rows = render_retrieval_report(*args, **kwargs, rrf_rows=[RrfRow(10, {1: 1.0, 4: 1.0}), RrfRow(60, {1: 0.0, 4: 1.0})])
+    with_rows = render_retrieval_report(
+        *args, **kwargs, rrf_rows=[RrfRow(10, {1: 1.0, 4: 1.0}), RrfRow(60, {1: 0.0, 4: 1.0})]
+    )
     assert "k do RRF" in with_rows and "| 10 | 100% | 100% |" in with_rows and "| 60 | 0% | 100% |" in with_rows
     # sem as linhas do RRF, a tabela de recuperação é seguida (após uma linha em branco) pela seção de ausentes
     assert "| 4 | 100% | 100% |\n\n## Perguntas em que falta" in without
@@ -340,8 +365,11 @@ def test_retrieval_report_sorts_questions_by_best_similarity_descending():
 
 # ---------- resposta: pontuação de uma pergunta ----------
 
+
 def test_a_complete_cited_answer_is_correct():
-    score = run_answer(question(), [hit(CHUNK_2)], FakeChat(GOOD_REPLY), INDEX_CHUNKS, 0.52, clock=ticking_clock(10.0, 12.5))
+    score = run_answer(
+        question(), [hit(CHUNK_2)], FakeChat(GOOD_REPLY), INDEX_CHUNKS, 0.52, clock=ticking_clock(10.0, 12.5)
+    )
     assert score.correct and score.complete and score.item_score == 1.0
     assert score.cited == [ART_2] and score.cited_recall == 1.0 and score.invalid_citations == []
     assert score.retrieval_recall == 1.0 and score.best_similarity == 0.7
@@ -382,7 +410,13 @@ def test_refusing_a_refusable_question_is_correct():
 
 
 def test_answering_a_refusable_question_is_a_missed_refusal():
-    score = run_answer(REFUSE_Q, [hit(CHUNK_5, 0.60)], FakeChat("Resposta inventada. [Fonte: IN RFB 2.091/2022, art. 5º]"), INDEX_CHUNKS, 0.52)
+    score = run_answer(
+        REFUSE_Q,
+        [hit(CHUNK_5, 0.60)],
+        FakeChat("Resposta inventada. [Fonte: IN RFB 2.091/2022, art. 5º]"),
+        INDEX_CHUNKS,
+        0.52,
+    )
     assert not score.refused and score.missed_refusal and not score.correct
 
 
@@ -403,11 +437,22 @@ def test_a_refusal_keeps_the_refusal_phrase_as_text():
 
 # ---------- arquivo de resultados (uma linha por pergunta) ----------
 
+
 def make_score(**changes) -> AnswerScore:
     base = dict(
-        id="Q01", group="fact", kind="answer", refused=False, best_similarity=0.7, retrieval_recall=1.0,
-        cited=[ART_2], cited_recall=1.0, invalid_citations=[], items_found=["a"], items_missing=[],
-        seconds=2.0, text="t",
+        id="Q01",
+        group="fact",
+        kind="answer",
+        refused=False,
+        best_similarity=0.7,
+        retrieval_recall=1.0,
+        cited=[ART_2],
+        cited_recall=1.0,
+        invalid_citations=[],
+        items_found=["a"],
+        items_missing=[],
+        seconds=2.0,
+        text="t",
     )
     base.update(changes)
     return AnswerScore(**base)
@@ -446,7 +491,9 @@ def test_run_answers_writes_each_result_as_soon_as_it_is_ready(tmp_path):
     def progress(done, total, score):
         lines_seen.append(len(output.read_text(encoding="utf-8").splitlines()))
 
-    scores = run_answers(questions_pair(), hits_pair(), FakeChat(GOOD_REPLY), INDEX_CHUNKS, 0.52, output=output, on_progress=progress)
+    scores = run_answers(
+        questions_pair(), hits_pair(), FakeChat(GOOD_REPLY), INDEX_CHUNKS, 0.52, output=output, on_progress=progress
+    )
     assert [s.id for s in scores] == ["Q01", "Q03"]
     assert lines_seen == [1, 2]  # a linha já estava no arquivo quando o progresso foi avisado
 
@@ -472,10 +519,15 @@ def test_run_answers_without_resume_starts_the_file_over(tmp_path):
 
 # ---------- reavaliação de respostas já gravadas ----------
 
+
 def test_rescore_applies_the_current_answer_key_to_the_saved_text():
     saved = make_score(
-        id="Q01", text="O limite é 30% e R$ 2.000.000. [Fonte: IN RFB 2.091/2022, art. 2º]",
-        items_found=["30%"], items_missing=["R$ 2 milhões"], cited=[ART_2], cited_recall=1.0,
+        id="Q01",
+        text="O limite é 30% e R$ 2.000.000. [Fonte: IN RFB 2.091/2022, art. 2º]",
+        items_found=["30%"],
+        items_missing=["R$ 2 milhões"],
+        cited=[ART_2],
+        cited_recall=1.0,
     )
     [updated] = rescore([question()], [saved])  # o gabarito atual reconhece "2.000.000"
     assert updated.items_found == ["30%", "R$ 2 milhões"] and updated.items_missing == []
@@ -490,8 +542,14 @@ def test_rescore_can_also_remove_items_the_new_key_no_longer_finds():
 
 
 def test_rescore_recomputes_the_citation_recall_with_the_current_articles():
-    saved = make_score(id="Q01", text="X. [Fonte: IN RFB 2.091/2022, art. 5º]", cited=[ART_5], cited_recall=0.0,
-                       items_found=["30%", "R$ 2 milhões"], items_missing=[])
+    saved = make_score(
+        id="Q01",
+        text="X. [Fonte: IN RFB 2.091/2022, art. 5º]",
+        cited=[ART_5],
+        cited_recall=0.0,
+        items_found=["30%", "R$ 2 milhões"],
+        items_missing=[],
+    )
     [updated] = rescore([question(articles=(ART_5,))], [saved])
     assert updated.cited_recall == 1.0
 
@@ -509,7 +567,15 @@ def test_rescore_takes_the_kind_from_the_current_questions():
 
 
 def test_rescore_keeps_refusals_and_refreshes_the_missing_labels():
-    saved = make_score(id="Q01", refused=True, text=REFUSAL_MESSAGE, cited=[], cited_recall=0.0, items_found=[], items_missing=["antigo"])
+    saved = make_score(
+        id="Q01",
+        refused=True,
+        text=REFUSAL_MESSAGE,
+        cited=[],
+        cited_recall=0.0,
+        items_found=[],
+        items_missing=["antigo"],
+    )
     [updated] = rescore([question()], [saved])
     assert updated.refused and updated.items_missing == ["30%", "R$ 2 milhões"] and updated.cited == []
 
@@ -536,8 +602,21 @@ def test_rescore_command_rewrites_the_results_and_the_report(workspace, capsys):
     data[0]["items"] = [{"label": "cita o termo", "any_of": ["termo"]}]  # gabarito corrigido
     workspace["questions"].write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
-    code = main(["rescore", "--questions", str(workspace["questions"]), "--input", str(output), "--report", str(report),
-                 "--model", "modelo-x"], environ={}, llm_factory=FakeLLM())
+    code = main(
+        [
+            "rescore",
+            "--questions",
+            str(workspace["questions"]),
+            "--input",
+            str(output),
+            "--report",
+            str(report),
+            "--model",
+            "modelo-x",
+        ],
+        environ={},
+        llm_factory=FakeLLM(),
+    )
     assert code == 0
     assert load_scores(output)[0].items_found == ["cita o termo"]  # reescrito no próprio arquivo
     text = report.read_text(encoding="utf-8")
@@ -549,30 +628,100 @@ def test_rescore_command_does_not_need_the_index_or_the_model(workspace):
     output = workspace["tmp"] / "r.jsonl"
     append_score(output, make_score(id="Q01", text="Sobre arrolamento. [Fonte: norma-teste, art. 1º]"))
     llm = FakeLLM()
-    code = main(["rescore", "--questions", str(workspace["questions"]), "--input", str(output), "--model", "m",
-                 "--report", str(workspace["tmp"] / "r.md")], environ={}, llm_factory=llm)
+    code = main(
+        [
+            "rescore",
+            "--questions",
+            str(workspace["questions"]),
+            "--input",
+            str(output),
+            "--model",
+            "m",
+            "--report",
+            str(workspace["tmp"] / "r.md"),
+        ],
+        environ={},
+        llm_factory=llm,
+    )
     assert code == 0 and llm.settings_seen == []  # nem o Ollama nem o índice foram tocados
 
 
 def test_rescore_command_reports_a_missing_input_file(workspace, capsys):
-    code = main(["rescore", "--questions", str(workspace["questions"]), "--input", str(workspace["tmp"] / "nada.jsonl"),
-                 "--model", "m"], environ={}, llm_factory=FakeLLM())
+    code = main(
+        [
+            "rescore",
+            "--questions",
+            str(workspace["questions"]),
+            "--input",
+            str(workspace["tmp"] / "nada.jsonl"),
+            "--model",
+            "m",
+        ],
+        environ={},
+        llm_factory=FakeLLM(),
+    )
     assert code == 1 and capsys.readouterr().err.startswith("Erro:")
 
 
 # ---------- resumo e relatório ----------
 
+
 def test_summarize_groups_and_totals():
     scores = [
-        make_score(id="Q01", group="fact", items_found=["a"], items_missing=[], cited_recall=1.0, retrieval_recall=1.0, seconds=10.0),
-        make_score(id="Q03", group="fact", items_found=["a"], items_missing=["b"], cited_recall=0.5, retrieval_recall=0.0, seconds=20.0,
-                   invalid_citations=["X"]),
-        make_score(id="Q04", group="hard", refused=True, items_found=[], items_missing=["a", "b"], cited=[], cited_recall=0.0,
-                   retrieval_recall=1.0, seconds=0.1),
-        make_score(id="Q05", group="out_of_corpus", kind="refuse", refused=True, items_found=[], items_missing=[], cited=[],
-                   cited_recall=1.0, retrieval_recall=1.0, seconds=0.1),
-        make_score(id="Q06", group="out_of_corpus", kind="refuse", refused=False, items_found=[], items_missing=[], cited=[],
-                   cited_recall=1.0, retrieval_recall=1.0, seconds=30.0),
+        make_score(
+            id="Q01",
+            group="fact",
+            items_found=["a"],
+            items_missing=[],
+            cited_recall=1.0,
+            retrieval_recall=1.0,
+            seconds=10.0,
+        ),
+        make_score(
+            id="Q03",
+            group="fact",
+            items_found=["a"],
+            items_missing=["b"],
+            cited_recall=0.5,
+            retrieval_recall=0.0,
+            seconds=20.0,
+            invalid_citations=["X"],
+        ),
+        make_score(
+            id="Q04",
+            group="hard",
+            refused=True,
+            items_found=[],
+            items_missing=["a", "b"],
+            cited=[],
+            cited_recall=0.0,
+            retrieval_recall=1.0,
+            seconds=0.1,
+        ),
+        make_score(
+            id="Q05",
+            group="out_of_corpus",
+            kind="refuse",
+            refused=True,
+            items_found=[],
+            items_missing=[],
+            cited=[],
+            cited_recall=1.0,
+            retrieval_recall=1.0,
+            seconds=0.1,
+        ),
+        make_score(
+            id="Q06",
+            group="out_of_corpus",
+            kind="refuse",
+            refused=False,
+            items_found=[],
+            items_missing=[],
+            cited=[],
+            cited_recall=1.0,
+            retrieval_recall=1.0,
+            seconds=30.0,
+        ),
     ]
     rows = {row.group: row for row in summarize(scores)}
     fact = rows["fact"]
@@ -592,12 +741,20 @@ def test_summarize_groups_and_totals():
 def test_report_has_parameters_groups_total_and_the_failures():
     scores = [
         make_score(id="Q01", group="fact"),
-        make_score(id="Q03", group="hard", items_found=["a"], items_missing=["b"], invalid_citations=["IN RFB 2.091/2022, art. 99"]),
+        make_score(
+            id="Q03",
+            group="hard",
+            items_found=["a"],
+            items_missing=["b"],
+            invalid_citations=["IN RFB 2.091/2022, art. 99"],
+        ),
     ]
     report = render_report("qwen2.5:3b", k=4, min_similarity=0.52, scores=scores, today="2026-10-08")
     assert "qwen2.5:3b" in report and "k = 4" in report and "0,52" in report and "2026-10-08" in report
     assert "constante do RRF: 60" in report
-    assert "constante do RRF: 7" in render_report("m", k=4, min_similarity=0.5, scores=scores, today="2026-10-08", rrf_k=7)
+    assert "constante do RRF: 7" in render_report(
+        "m", k=4, min_similarity=0.5, scores=scores, today="2026-10-08", rrf_k=7
+    )
     assert "Fatos pontuais" in report and "Difíceis" in report and "Total" in report
     assert "Q03" in report and "b" in report and "art. 99" in report  # a falha aparece com o item que faltou
     assert "Q01" not in report.split("Falhas")[-1]  # a pergunta correta não é listada como falha
@@ -635,8 +792,14 @@ def workspace(tmp_path):
     index_path = tmp_path / "index.json"
     save_index(build_index(chunks, fake_embed, "bge-m3"), index_path)
     questions = [
-        {"id": "Q01", "group": "fact", "kind": "answer", "question": "arrolamento",
-         "articles": ["norma-teste, art. 1º"], "items": [{"label": "cita arrolamento", "any_of": ["arrolamento"]}]},
+        {
+            "id": "Q01",
+            "group": "fact",
+            "kind": "answer",
+            "question": "arrolamento",
+            "articles": ["norma-teste, art. 1º"],
+            "items": [{"label": "cita arrolamento", "any_of": ["arrolamento"]}],
+        },
         {"id": "Q02", "group": "out_of_corpus", "kind": "refuse", "question": "imovel", "articles": [], "items": []},
     ]
     questions_path = tmp_path / "perguntas.json"
@@ -654,7 +817,9 @@ def test_retrieval_command_prints_and_saves_the_calibration_report(workspace, ca
     assert code == 0
     out = capsys.readouterr().out
     assert "Recuperação" in out and "Limiar" in out
-    assert report.read_text(encoding="utf-8") == out.rstrip("\n") + "\n" or "Recuperação" in report.read_text(encoding="utf-8")
+    assert report.read_text(encoding="utf-8") == out.rstrip("\n") + "\n" or "Recuperação" in report.read_text(
+        encoding="utf-8"
+    )
 
 
 def test_retrieval_command_embeds_each_question_only_once_even_with_the_rrf_sweep(workspace, capsys):
@@ -664,8 +829,11 @@ def test_retrieval_command_embeds_each_question_only_once_even_with_the_rrf_swee
         embedded.append(list(texts))
         return fake_embed(texts)
 
-    code = main(["retrieval", *common(workspace), "--report", str(workspace["tmp"] / "r.md")], environ={},
-                llm_factory=lambda settings: (embed, FakeChat("x")))
+    code = main(
+        ["retrieval", *common(workspace), "--report", str(workspace["tmp"] / "r.md")],
+        environ={},
+        llm_factory=lambda settings: (embed, FakeChat("x")),
+    )
     assert code == 0
     assert len(embedded) == 2  # uma pergunta = um embedding, mesmo com a busca repetida para cada k do RRF
     assert "k do RRF" in capsys.readouterr().out
@@ -673,15 +841,21 @@ def test_retrieval_command_embeds_each_question_only_once_even_with_the_rrf_swee
 
 def test_retrieval_command_never_calls_the_chat(workspace):
     llm = FakeLLM()
-    assert main(["retrieval", *common(workspace), "--report", str(workspace["tmp"] / "r.md")], environ={}, llm_factory=llm) == 0
+    assert (
+        main(["retrieval", *common(workspace), "--report", str(workspace["tmp"] / "r.md")], environ={}, llm_factory=llm)
+        == 0
+    )
     assert llm.chat.calls == 0
 
 
 def test_answers_command_runs_writes_jsonl_and_report(workspace, capsys):
     output, report = workspace["tmp"] / "r.jsonl", workspace["tmp"] / "r.md"
     llm = FakeLLM()
-    code = main(["answers", *common(workspace), "--model", "modelo-x", "--output", str(output), "--report", str(report)],
-                environ={}, llm_factory=llm)
+    code = main(
+        ["answers", *common(workspace), "--model", "modelo-x", "--output", str(output), "--report", str(report)],
+        environ={},
+        llm_factory=llm,
+    )
     assert code == 0
     assert llm.settings_seen[0].chat_model == "modelo-x"
     scores = load_scores(output)
@@ -693,9 +867,25 @@ def test_answers_command_runs_writes_jsonl_and_report(workspace, capsys):
 
 def test_rrf_k_option_is_used_and_shown_in_both_reports(workspace, capsys):
     tmp = workspace["tmp"]
-    assert main(["retrieval", *common(workspace), "--rrf-k", "7", "--report", str(tmp / "b.md")], environ={}, llm_factory=FakeLLM()) == 0
+    assert (
+        main(
+            ["retrieval", *common(workspace), "--rrf-k", "7", "--report", str(tmp / "b.md")],
+            environ={},
+            llm_factory=FakeLLM(),
+        )
+        == 0
+    )
     assert "usada nas demais tabelas: 7" in capsys.readouterr().out
-    args = ["answers", *common(workspace), "--rrf-k", "7", "--output", str(tmp / "r.jsonl"), "--report", str(tmp / "r.md")]
+    args = [
+        "answers",
+        *common(workspace),
+        "--rrf-k",
+        "7",
+        "--output",
+        str(tmp / "r.jsonl"),
+        "--report",
+        str(tmp / "r.md"),
+    ]
     assert main(args, environ={}, llm_factory=FakeLLM()) == 0
     assert "constante do RRF: 7" in capsys.readouterr().out
     assert main(args, environ={"RAG_RRF_K": "9"}, llm_factory=FakeLLM()) == 0  # a opção vence o ambiente
@@ -726,13 +916,32 @@ def test_both_commands_search_with_the_configured_rrf_k(workspace, monkeypatch, 
 
 def test_answers_command_only_runs_the_chosen_questions(workspace):
     output = workspace["tmp"] / "r.jsonl"
-    code = main(["answers", *common(workspace), "--only", "Q01", "--output", str(output), "--report", str(workspace["tmp"] / "r.md")],
-                environ={}, llm_factory=FakeLLM())
+    code = main(
+        [
+            "answers",
+            *common(workspace),
+            "--only",
+            "Q01",
+            "--output",
+            str(output),
+            "--report",
+            str(workspace["tmp"] / "r.md"),
+        ],
+        environ={},
+        llm_factory=FakeLLM(),
+    )
     assert code == 0 and [s.id for s in load_scores(output)] == ["Q01"]
 
 
 def test_answers_command_resume_does_not_repeat_finished_questions(workspace):
-    args = ["answers", *common(workspace), "--output", str(workspace["tmp"] / "r.jsonl"), "--report", str(workspace["tmp"] / "r.md")]
+    args = [
+        "answers",
+        *common(workspace),
+        "--output",
+        str(workspace["tmp"] / "r.jsonl"),
+        "--report",
+        str(workspace["tmp"] / "r.md"),
+    ]
     first = FakeLLM()
     assert main(args, environ={}, llm_factory=first) == 0 and first.chat.calls == 1
     second = FakeLLM()
@@ -742,12 +951,30 @@ def test_answers_command_resume_does_not_repeat_finished_questions(workspace):
 
 def test_options_reach_the_settings(workspace):
     llm = FakeLLM()
-    args = ["answers", *common(workspace), "--model", "modelo-y", "--min-similarity", "0.9", "-k", "1", "--host", "http://outro:11434",
-            "--output", str(workspace["tmp"] / "r.jsonl"), "--report", str(workspace["tmp"] / "r.md")]
+    args = [
+        "answers",
+        *common(workspace),
+        "--model",
+        "modelo-y",
+        "--min-similarity",
+        "0.9",
+        "-k",
+        "1",
+        "--host",
+        "http://outro:11434",
+        "--output",
+        str(workspace["tmp"] / "r.jsonl"),
+        "--report",
+        str(workspace["tmp"] / "r.md"),
+    ]
     assert main(args, environ={}, llm_factory=llm) == 0
     settings = llm.settings_seen[0]
     assert (settings.chat_model, settings.min_similarity, settings.top_k, settings.ollama_host) == (
-        "modelo-y", 0.9, 1, "http://outro:11434")
+        "modelo-y",
+        0.9,
+        1,
+        "http://outro:11434",
+    )
 
 
 def test_embed_model_option_is_checked_against_the_index(workspace, capsys):
@@ -773,7 +1000,14 @@ def test_default_output_paths_are_relative_and_named_after_the_model(workspace, 
 
 
 def test_answers_command_reports_progress_on_stderr_and_dates_the_report(workspace, capsys):
-    args = ["answers", *common(workspace), "--output", str(workspace["tmp"] / "r.jsonl"), "--report", str(workspace["tmp"] / "r.md")]
+    args = [
+        "answers",
+        *common(workspace),
+        "--output",
+        str(workspace["tmp"] / "r.jsonl"),
+        "--report",
+        str(workspace["tmp"] / "r.md"),
+    ]
     assert main(args, environ={}, llm_factory=FakeLLM()) == 0
     out = capsys.readouterr()
     assert "[1/2] Q01 ok" in out.err and "[2/2] Q02 ok" in out.err
@@ -786,15 +1020,21 @@ def test_unknown_question_id_in_only_is_an_error(workspace, capsys):
 
 
 def test_missing_index_is_reported_without_traceback(workspace, capsys):
-    code = main(["retrieval", "--index", str(workspace["tmp"] / "nao-existe.json"), "--questions", str(workspace["questions"])],
-                environ={}, llm_factory=FakeLLM())
+    code = main(
+        ["retrieval", "--index", str(workspace["tmp"] / "nao-existe.json"), "--questions", str(workspace["questions"])],
+        environ={},
+        llm_factory=FakeLLM(),
+    )
     err = capsys.readouterr().err
     assert code == 1 and err.startswith("Erro:") and "Traceback" not in err
 
 
 def test_missing_questions_file_is_reported(workspace, capsys):
-    code = main(["retrieval", "--index", str(workspace["index"]), "--questions", str(workspace["tmp"] / "x.json")],
-                environ={}, llm_factory=FakeLLM())
+    code = main(
+        ["retrieval", "--index", str(workspace["index"]), "--questions", str(workspace["tmp"] / "x.json")],
+        environ={},
+        llm_factory=FakeLLM(),
+    )
     assert code == 1 and "não encontrado" in capsys.readouterr().err
 
 
@@ -814,8 +1054,11 @@ def test_bad_usage_exits_with_code_2():
 
 def test_rescore_command_requires_the_model_name_for_the_report_header(workspace):
     with pytest.raises(SystemExit) as stop:
-        main(["rescore", "--questions", str(workspace["questions"]), "--input", str(workspace["tmp"] / "r.jsonl")],
-             environ={}, llm_factory=FakeLLM())
+        main(
+            ["rescore", "--questions", str(workspace["questions"]), "--input", str(workspace["tmp"] / "r.jsonl")],
+            environ={},
+            llm_factory=FakeLLM(),
+        )
     assert stop.value.code == 2
 
 
@@ -823,18 +1066,38 @@ def test_rescore_command_writes_to_another_file_when_asked(workspace):
     source, target = workspace["tmp"] / "r.jsonl", workspace["tmp"] / "novo.jsonl"
     append_score(source, make_score(id="Q01", text="Sobre arrolamento. [Fonte: norma-teste, art. 1º]"))
     before = source.read_text(encoding="utf-8")
-    code = main(["rescore", "--questions", str(workspace["questions"]), "--input", str(source), "--output", str(target),
-                 "--model", "m"], environ={}, llm_factory=FakeLLM())
-    assert code == 0 and source.read_text(encoding="utf-8") == before and load_scores(target)[0].items_found == ["cita arrolamento"]
+    code = main(
+        [
+            "rescore",
+            "--questions",
+            str(workspace["questions"]),
+            "--input",
+            str(source),
+            "--output",
+            str(target),
+            "--model",
+            "m",
+        ],
+        environ={},
+        llm_factory=FakeLLM(),
+    )
+    assert (
+        code == 0
+        and source.read_text(encoding="utf-8") == before
+        and load_scores(target)[0].items_found == ["cita arrolamento"]
+    )
     assert (workspace["tmp"] / "novo.md").exists()  # o relatório acompanha o arquivo de saída
 
 
 # ---------- comparação entre rodadas ----------
 
+
 def comparison_runs():
     answered = make_score(id="Q01", seconds=10.0)
     half = make_score(id="Q02", items_found=["a"], items_missing=["b"], seconds=20.0)
-    refusal = make_score(id="Q03", kind="refuse", group="out_of_corpus", refused=True, items_found=[], items_missing=[], seconds=0.0)
+    refusal = make_score(
+        id="Q03", kind="refuse", group="out_of_corpus", refused=True, items_found=[], items_missing=[], seconds=0.0
+    )
     slower = [make_score(id="Q01", seconds=100.0), make_score(id="Q02", seconds=300.0), refusal]
     return [answered, half, refusal], slower
 
@@ -853,11 +1116,22 @@ def test_render_comparison_summarizes_each_run_and_marks_each_question():
 
 def test_render_comparison_counts_errors_of_each_kind_per_run():
     refused_wrongly = dict(refused=True, items_found=[], items_missing=["a"])
-    answered_wrongly = dict(kind="refuse", group="out_of_corpus", refused=False, items_found=[], items_missing=[], seconds=42.0)
+    answered_wrongly = dict(
+        kind="refuse", group="out_of_corpus", refused=False, items_found=[], items_missing=[], seconds=42.0
+    )
     refused_rightly = dict(kind="refuse", group="out_of_corpus", refused=True, items_found=[], items_missing=[])
-    wrong_a = [make_score(id="Q01", **refused_wrongly), make_score(id="Q02", **refused_wrongly),
-               make_score(id="Q03", **answered_wrongly), make_score(id="Q04", invalid_citations=["X", "Y"])]
-    clean_b = [make_score(id="Q01"), make_score(id="Q02"), make_score(id="Q03", **refused_rightly), make_score(id="Q04")]
+    wrong_a = [
+        make_score(id="Q01", **refused_wrongly),
+        make_score(id="Q02", **refused_wrongly),
+        make_score(id="Q03", **answered_wrongly),
+        make_score(id="Q04", invalid_citations=["X", "Y"]),
+    ]
+    clean_b = [
+        make_score(id="Q01"),
+        make_score(id="Q02"),
+        make_score(id="Q03", **refused_rightly),
+        make_score(id="Q04"),
+    ]
     report = render_comparison(["a", "b"], [wrong_a, clean_b], today="2026-10-08")
     assert "| Recusas indevidas | 2 | 0 |" in report  # contagens diferentes: não dá para trocar uma pela outra
     assert "| Respostas indevidas | 1 | 0 |" in report
@@ -883,8 +1157,11 @@ def test_compare_command_writes_the_report(workspace, capsys):
     for path, scores in ((file_a, first), (file_b, second)):
         for score in scores:
             append_score(path, score)
-    code = main(["compare", "--inputs", str(file_a), str(file_b), "--names", "3b", "7b", "--report", str(report)],
-                environ={}, llm_factory=FakeLLM())
+    code = main(
+        ["compare", "--inputs", str(file_a), str(file_b), "--names", "3b", "7b", "--report", str(report)],
+        environ={},
+        llm_factory=FakeLLM(),
+    )
     assert code == 0
     assert "| Métrica | 3b | 7b |" in report.read_text(encoding="utf-8")
     assert "Respostas corretas" in capsys.readouterr().out
@@ -893,9 +1170,17 @@ def test_compare_command_writes_the_report(workspace, capsys):
 def test_compare_command_reports_wrong_number_of_names_and_missing_files(workspace, capsys):
     path = workspace["tmp"] / "a.jsonl"
     append_score(path, make_score())
-    assert main(["compare", "--inputs", str(path), str(path), "--names", "só-um"], environ={}, llm_factory=FakeLLM()) == 1
+    assert (
+        main(["compare", "--inputs", str(path), str(path), "--names", "só-um"], environ={}, llm_factory=FakeLLM()) == 1
+    )
     assert "nomes" in capsys.readouterr().err
-    assert main(["compare", "--inputs", str(path), str(workspace["tmp"] / "x.jsonl"), "--names", "a", "b"],
-                environ={}, llm_factory=FakeLLM()) == 1
+    assert (
+        main(
+            ["compare", "--inputs", str(path), str(workspace["tmp"] / "x.jsonl"), "--names", "a", "b"],
+            environ={},
+            llm_factory=FakeLLM(),
+        )
+        == 1
+    )
     err = capsys.readouterr().err
     assert err.startswith("Erro:") and "não encontrado" in err

@@ -77,7 +77,7 @@ class Settings:
                 raise ConfigError(f"{field} {explanation}; recebi {value!r}")
 
     @classmethod
-    def from_env(cls, environ: Mapping[str, str] | None = None) -> "Settings":
+    def from_env(cls, environ: Mapping[str, str] | None = None) -> Settings:
         """Monta a configuração a partir das variáveis RAG_*. Variável ausente ou vazia usa o padrão.
 
         Args:
@@ -107,6 +107,6 @@ class Settings:
                 values[field] = raw
         return cls(**values)
 
-    def with_overrides(self, **changes: object) -> "Settings":
+    def with_overrides(self, **changes: object) -> Settings:
         """Devolve uma cópia com os campos trocados. Valor `None` é ignorado (útil para opções da linha de comando)."""
         return replace(self, **{name: value for name, value in changes.items() if value is not None})

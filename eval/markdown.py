@@ -219,7 +219,9 @@ def render_retrieval_report(
     return "\n".join(lines) + "\n"
 
 
-def _recall_section(questions: Sequence[Question], hits_by_id: Mapping[str, Sequence[Hit]], ks: Sequence[int]) -> list[str]:
+def _recall_section(
+    questions: Sequence[Question], hits_by_id: Mapping[str, Sequence[Hit]], ks: Sequence[int]
+) -> list[str]:
     groups = [g for g in GROUPS if any(q.group == g and q.kind == "answer" for q in questions)]
     lines = [
         "## Recuperação dos artigos esperados, por k",

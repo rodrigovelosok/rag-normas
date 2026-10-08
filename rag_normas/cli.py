@@ -26,7 +26,9 @@ def build_parser() -> argparse.ArgumentParser:
     options.add_argument("--model", help="modelo de chat (padrão: qwen2.5:3b)")
     options.add_argument("--embed-model", help="modelo de embedding (padrão: bge-m3)")
     options.add_argument("-k", "--top-k", type=int, help="quantos artigos entram na resposta (padrão: 4)")
-    options.add_argument("--rrf-k", type=int, help="constante do RRF, que junta a busca por vetor e por palavras (padrão: 5)")
+    options.add_argument(
+        "--rrf-k", type=int, help="constante do RRF, que junta a busca por vetor e por palavras (padrão: 5)"
+    )
     options.add_argument("--min-similarity", type=float, help="similaridade mínima para responder (padrão: 0.56)")
     options.add_argument("--index", type=Path, help="arquivo do índice (padrão: data/index.json)")
     options.add_argument("--corpus", type=Path, help="pasta com os textos das normas (padrão: data/normas)")

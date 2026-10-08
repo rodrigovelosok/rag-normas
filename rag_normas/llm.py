@@ -17,7 +17,7 @@ class LLMError(Exception):
 
 def make_llm(
     settings: Settings,
-    client: "ollama.Client | None" = None,
+    client: ollama.Client | None = None,
 ) -> tuple[Callable[[list[str]], list[list[float]]], Callable[[list[dict[str, str]]], str]]:
     """Cria as duas funções que o resto do sistema usa.
 
@@ -68,5 +68,7 @@ def _call(action: Callable[[], dict], settings: Settings, model: str) -> dict:
         ) from None
     except ollama.ResponseError as error:
         if error.status_code == 404:
-            raise LLMError(f"O modelo '{model}' não está instalado no Ollama. Instale com: ollama pull {model}") from None
+            raise LLMError(
+                f"O modelo '{model}' não está instalado no Ollama. Instale com: ollama pull {model}"
+            ) from None
         raise LLMError(f"O Ollama respondeu com erro ({error.status_code}): {error.error}") from None

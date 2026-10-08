@@ -40,17 +40,23 @@ RRF_SWEEP_KS = [3, 4, 5, 6]  # k em que a varredura mede a recuperação
 
 def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("--questions", type=Path, default=DEFAULT_QUESTIONS, help="arquivo de perguntas (padrão: eval/perguntas.json)")
+    common.add_argument(
+        "--questions", type=Path, default=DEFAULT_QUESTIONS, help="arquivo de perguntas (padrão: eval/perguntas.json)"
+    )
     common.add_argument("--index", type=Path, help="arquivo do índice (padrão: data/index.json)")
     common.add_argument("--host", help="endereço do Ollama")
     common.add_argument("--embed-model", help="modelo de embedding")
     common.add_argument("-k", "--top-k", type=int, help="quantos artigos entram na resposta (padrão: 4)")
     common.add_argument("--rrf-k", type=int, help="constante do RRF (padrão: 5)")
 
-    parser = argparse.ArgumentParser(prog="python -m eval.avaliar", description="Avalia a busca e as respostas do rag-normas.")
+    parser = argparse.ArgumentParser(
+        prog="python -m eval.avaliar", description="Avalia a busca e as respostas do rag-normas."
+    )
     commands = parser.add_subparsers(dest="command", required=True, metavar="{retrieval,answers}")
 
-    retrieval = commands.add_parser("retrieval", parents=[common], help="avalia só a busca e a varredura do limiar (rápido, sem chat)")
+    retrieval = commands.add_parser(
+        "retrieval", parents=[common], help="avalia só a busca e a varredura do limiar (rápido, sem chat)"
+    )
     retrieval.add_argument("--max-k", type=int, default=8, help="maior k da tabela de recuperação (padrão: 8)")
     retrieval.add_argument("--report", type=Path, default=REPORTS_DIR / "busca.md", help="onde gravar o relatório")
 
@@ -58,21 +64,43 @@ def build_parser() -> argparse.ArgumentParser:
     answers.add_argument("--model", help="modelo de chat (padrão: qwen2.5:3b)")
     answers.add_argument("--min-similarity", type=float, help="limiar de recusa (padrão: 0.56)")
     answers.add_argument("--only", help="ids separados por vírgula, por exemplo Q01,Q05")
-    answers.add_argument("--resume", action="store_true", help="não repete as perguntas já gravadas no arquivo de saída")
-    answers.add_argument("--output", type=Path, help="arquivo .jsonl de resultados (padrão: eval/relatorios/respostas-<modelo>-k<k>.jsonl)")
-    answers.add_argument("--report", type=Path, help="relatório em Markdown (padrão: o mesmo nome do --output, com .md)")
+    answers.add_argument(
+        "--resume", action="store_true", help="não repete as perguntas já gravadas no arquivo de saída"
+    )
+    answers.add_argument(
+        "--output",
+        type=Path,
+        help="arquivo .jsonl de resultados (padrão: eval/relatorios/respostas-<modelo>-k<k>.jsonl)",
+    )
+    answers.add_argument(
+        "--report", type=Path, help="relatório em Markdown (padrão: o mesmo nome do --output, com .md)"
+    )
 
-    again = commands.add_parser("rescore", help="reavalia respostas já gravadas com o gabarito atual (sem Ollama nem índice)")
-    again.add_argument("--questions", type=Path, default=DEFAULT_QUESTIONS, help="arquivo de perguntas (padrão: eval/perguntas.json)")
+    again = commands.add_parser(
+        "rescore", help="reavalia respostas já gravadas com o gabarito atual (sem Ollama nem índice)"
+    )
+    again.add_argument(
+        "--questions", type=Path, default=DEFAULT_QUESTIONS, help="arquivo de perguntas (padrão: eval/perguntas.json)"
+    )
     again.add_argument("--input", type=Path, required=True, help="arquivo .jsonl gravado por 'answers'")
-    again.add_argument("--output", type=Path, help="onde gravar os resultados reavaliados (padrão: reescreve o --input)")
-    again.add_argument("--report", type=Path, help="relatório em Markdown (padrão: o mesmo nome do arquivo de saída, com .md)")
+    again.add_argument(
+        "--output", type=Path, help="onde gravar os resultados reavaliados (padrão: reescreve o --input)"
+    )
+    again.add_argument(
+        "--report", type=Path, help="relatório em Markdown (padrão: o mesmo nome do arquivo de saída, com .md)"
+    )
     again.add_argument("--model", required=True, help="nome do modelo, só para o cabeçalho do relatório")
     again.add_argument("-k", "--top-k", type=int, help="k usado na rodada original, para o cabeçalho (padrão: 4)")
-    again.add_argument("--rrf-k", type=int, help="constante do RRF usada na rodada original, para o cabeçalho (padrão: 5)")
-    again.add_argument("--min-similarity", type=float, help="limiar usado na rodada original, para o cabeçalho (padrão: 0.56)")
+    again.add_argument(
+        "--rrf-k", type=int, help="constante do RRF usada na rodada original, para o cabeçalho (padrão: 5)"
+    )
+    again.add_argument(
+        "--min-similarity", type=float, help="limiar usado na rodada original, para o cabeçalho (padrão: 0.56)"
+    )
 
-    compare = commands.add_parser("compare", help="compara rodadas gravadas das mesmas perguntas (por exemplo, 3b e 7b)")
+    compare = commands.add_parser(
+        "compare", help="compara rodadas gravadas das mesmas perguntas (por exemplo, 3b e 7b)"
+    )
     compare.add_argument("--inputs", type=Path, nargs="+", required=True, help="arquivos .jsonl de resultados")
     compare.add_argument("--names", nargs="+", required=True, help="um nome para cada arquivo, na mesma ordem")
     compare.add_argument("--report", type=Path, default=REPORTS_DIR / "comparacao.md", help="onde gravar o relatório")
@@ -160,8 +188,14 @@ def _run_retrieval(args, settings: Settings, index: Index, questions: list[Quest
     hits = retrieve(questions, index, embed, max_k, settings.rrf_k)
     rrf_rows = sweep_rrf_k(questions, make_search(index, embed), DEFAULT_RRF_KS, RRF_SWEEP_KS)
     report = render_retrieval_report(
-        questions, hits, settings.top_k, list(range(1, max_k + 1)), DEFAULT_THRESHOLDS, date.today().isoformat(),
-        rrf_rows, settings.rrf_k,
+        questions,
+        hits,
+        settings.top_k,
+        list(range(1, max_k + 1)),
+        DEFAULT_THRESHOLDS,
+        date.today().isoformat(),
+        rrf_rows,
+        settings.rrf_k,
     )
     _write(args.report, report)
     print(report, end="")
@@ -180,10 +214,20 @@ def _run_answers(args, settings: Settings, index: Index, questions: list[Questio
     hits = retrieve(questions, index, embed, settings.top_k, settings.rrf_k)
 
     def progress(number: int, total: int, score: AnswerScore) -> None:
-        print(f"[{number}/{total}] {score.id} {'ok' if score.correct else 'falhou'} ({score.seconds:.0f} s)", file=sys.stderr)
+        print(
+            f"[{number}/{total}] {score.id} {'ok' if score.correct else 'falhou'} ({score.seconds:.0f} s)",
+            file=sys.stderr,
+        )
 
     scores = run_answers(
-        questions, hits, chat, index.chunks, settings.min_similarity, output=output, resume=args.resume, on_progress=progress
+        questions,
+        hits,
+        chat,
+        index.chunks,
+        settings.min_similarity,
+        output=output,
+        resume=args.resume,
+        on_progress=progress,
     )
     report = render_report(
         settings.chat_model, settings.top_k, settings.min_similarity, scores, date.today().isoformat(), settings.rrf_k

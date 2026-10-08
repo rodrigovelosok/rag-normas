@@ -42,6 +42,7 @@ Art. 11-A. Artigo com letra.
 
 # ---------- textos pequenos ----------
 
+
 def test_splits_one_chunk_per_article():
     chunks = parse_norm(SAMPLE, "Norma X")
     assert [c.article for c in chunks] == ["1", "2", "10", "11-A"]
@@ -105,6 +106,7 @@ def test_reference_format(article, expected):
 
 
 # ---------- corpus real ----------
+
 
 @pytest.fixture(scope="module")
 def corpus():

@@ -65,7 +65,9 @@ def run_index(paths, extra=(), env=None, llm=None) -> int:
 
 
 def run_ask(paths, question, extra=(), env=None, llm=None) -> int:
-    return main(["ask", question, "--index", str(paths["index"]), *extra], environ=env or {}, llm_factory=llm or FakeLLM())
+    return main(
+        ["ask", question, "--index", str(paths["index"]), *extra], environ=env or {}, llm_factory=llm or FakeLLM()
+    )
 
 
 @pytest.fixture
@@ -75,6 +77,7 @@ def indexed(paths):
 
 
 # ---------- index ----------
+
 
 def test_index_writes_the_index_and_reports(paths, capsys):
     assert run_index(paths) == 0
@@ -117,6 +120,7 @@ def test_index_reports_an_ollama_failure_without_traceback(paths, capsys):
 
 
 # ---------- ask ----------
+
 
 def test_ask_prints_answer_sources_and_disclaimer(indexed, capsys):
     llm = FakeLLM()
@@ -191,6 +195,7 @@ def test_ask_with_blank_question_is_a_usage_error(indexed, capsys):
 
 
 # ---------- opções, ambiente e precedência (RF08) ----------
+
 
 def sources_in(output: str) -> list[str]:
     return [line for line in output.splitlines() if line.startswith("- ")]
@@ -270,6 +275,7 @@ def test_non_numeric_option_is_rejected_by_argparse(indexed):
 
 # ---------- --scores ----------
 
+
 def test_scores_option_shows_threshold_and_similarities_on_stderr(indexed, capsys):
     assert run_ask(indexed, "arrolamento", ["--scores"]) == 0
     err = capsys.readouterr().err
@@ -283,6 +289,7 @@ def test_without_scores_option_stderr_stays_quiet(indexed, capsys):
 
 
 # ---------- uso e ponto de entrada ----------
+
 
 @pytest.mark.parametrize("argv", [[], ["inexistente"], ["ask"]])
 def test_bad_usage_exits_with_code_2(argv):

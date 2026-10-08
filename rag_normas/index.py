@@ -113,8 +113,10 @@ def load_index(path: Path, expected_model: str | None = None) -> Index:
         chunks = [Chunk(c["norm"], c["article"], c["section"], c["text"]) for c in data["chunks"]]
         vectors = [c["vector"] for c in data["chunks"]]
         model, created_at = data["embedding_model"], data["created_at"]
-    except (json.JSONDecodeError, KeyError, TypeError):
-        raise IndexFileError(f"O índice em {path} está corrompido ou em formato antigo. Recrie com: {REINDEX_HINT}") from None
+    except json.JSONDecodeError, KeyError, TypeError:
+        raise IndexFileError(
+            f"O índice em {path} está corrompido ou em formato antigo. Recrie com: {REINDEX_HINT}"
+        ) from None
 
     if expected_model and model != expected_model:
         raise IndexFileError(

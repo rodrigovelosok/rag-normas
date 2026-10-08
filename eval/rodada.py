@@ -17,7 +17,6 @@ from rag_normas.index import Index
 from rag_normas.ingest import Chunk
 from rag_normas.search import EmbedFn, Hit, hybrid_search
 
-
 # ---------- busca ----------
 
 

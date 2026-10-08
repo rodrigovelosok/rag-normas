@@ -5,8 +5,8 @@ from datetime import datetime
 
 import pytest
 
-from rag_normas.ingest import Chunk
 from rag_normas.index import Index, IndexFileError, build_index, load_index, save_index
+from rag_normas.ingest import Chunk
 
 CHUNKS = [
     Chunk("Norma X", str(n), "Capítulo I — Gerais" if n % 2 else "", f"Art. {n}º Texto número {n}, com ação.")
@@ -27,6 +27,7 @@ def fake_embed_factory(batches=None):
 
 
 # ---------- build_index ----------
+
 
 def test_build_index_gives_one_vector_per_chunk_in_order():
     index = build_index(CHUNKS, fake_embed_factory(), "bge-m3", now=NOW)
@@ -51,7 +52,9 @@ def test_build_index_works_in_batches():
 
 def test_build_index_reports_progress():
     progress = []
-    build_index(CHUNKS, fake_embed_factory(), "bge-m3", now=NOW, batch_size=2, on_progress=lambda d, t: progress.append((d, t)))
+    build_index(
+        CHUNKS, fake_embed_factory(), "bge-m3", now=NOW, batch_size=2, on_progress=lambda d, t: progress.append((d, t))
+    )
     assert progress == [(2, 5), (4, 5), (5, 5)]
 
 
@@ -66,6 +69,7 @@ def test_build_index_detects_embed_returning_the_wrong_amount():
 
 
 # ---------- save_index / load_index ----------
+
 
 @pytest.fixture
 def index():
