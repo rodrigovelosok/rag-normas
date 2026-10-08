@@ -41,6 +41,14 @@ class Chunk:
         ordinal = "º" if self.article.isdigit() and int(self.article) <= 9 else ""
         return f"{self.norm}, art. {self.article}{ordinal}"
 
+    @property
+    def search_text(self) -> str:
+        """Texto usado para indexar e buscar: a seção (contexto) seguida do artigo.
+
+        Fica aqui, e não em cada módulo, para o índice e a busca usarem exatamente o mesmo texto.
+        """
+        return f"{self.section}\n{self.text}" if self.section else self.text
+
 
 def parse_norm(text: str, norm: str) -> list[Chunk]:
     """Divide o texto de uma norma em um Chunk por artigo.

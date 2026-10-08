@@ -162,3 +162,12 @@ def test_unknown_file_uses_its_name_as_the_norm_label(tmp_path):
     (tmp_path / "minha-norma.txt").write_text("Título\nArt. 1º Texto.\n", encoding="utf-8")
     chunks = load_corpus(tmp_path)
     assert [c.norm for c in chunks] == ["minha-norma"]
+
+
+def test_search_text_joins_section_and_text():
+    chunk = Chunk("Norma X", "1", "Capítulo I — Gerais", "Art. 1º Texto.")
+    assert chunk.search_text == "Capítulo I — Gerais\nArt. 1º Texto."
+
+
+def test_search_text_without_section_is_just_the_text():
+    assert Chunk("Norma X", "1", "", "Art. 1º Texto.").search_text == "Art. 1º Texto."
