@@ -26,6 +26,7 @@ from eval.avaliar import (
     recall_at_k,
     render_report,
     render_retrieval_report,
+    rescore,
     retrieve,
     run_answer,
     run_answers,
@@ -460,6 +461,84 @@ def test_run_answers_without_resume_starts_the_file_over(tmp_path):
     assert load_scores(output)[0].seconds != 9.0
 
 
+# ---------- reavaliação de respostas já gravadas ----------
+
+def test_rescore_applies_the_current_answer_key_to_the_saved_text():
+    saved = make_score(
+        id="Q01", text="O limite é 30% e R$ 2.000.000. [Fonte: IN RFB 2.091/2022, art. 2º]",
+        items_found=["30%"], items_missing=["R$ 2 milhões"], cited=[ART_2], cited_recall=1.0,
+    )
+    [updated] = rescore([question()], [saved])  # o gabarito atual reconhece "2.000.000"
+    assert updated.items_found == ["30%", "R$ 2 milhões"] and updated.items_missing == []
+    assert updated.text == saved.text and updated.seconds == saved.seconds  # o resto não muda
+
+
+def test_rescore_can_also_remove_items_the_new_key_no_longer_finds():
+    stricter = question(items=(Item("30%", ("trinta e um por cento",)),))
+    saved = make_score(id="Q01", text="30%. [Fonte: IN RFB 2.091/2022, art. 2º]", items_found=["30%"], items_missing=[])
+    [updated] = rescore([stricter], [saved])
+    assert updated.items_found == [] and updated.items_missing == ["30%"] and not updated.correct
+
+
+def test_rescore_recomputes_the_citation_recall_with_the_current_articles():
+    saved = make_score(id="Q01", text="X. [Fonte: IN RFB 2.091/2022, art. 5º]", cited=[ART_5], cited_recall=0.0,
+                       items_found=["30%", "R$ 2 milhões"], items_missing=[])
+    [updated] = rescore([question(articles=(ART_5,))], [saved])
+    assert updated.cited_recall == 1.0
+
+
+def test_rescore_keeps_refusals_and_refreshes_the_missing_labels():
+    saved = make_score(id="Q01", refused=True, text=REFUSAL_MESSAGE, cited=[], cited_recall=0.0, items_found=[], items_missing=["antigo"])
+    [updated] = rescore([question()], [saved])
+    assert updated.refused and updated.items_missing == ["30%", "R$ 2 milhões"] and updated.cited == []
+
+
+def test_rescore_takes_group_and_kind_from_the_current_questions():
+    saved = make_score(id="Q01", group="fact", kind="answer")
+    [updated] = rescore([question(group="hard")], [saved])
+    assert updated.group == "hard"
+
+
+def test_rescore_rejects_a_result_without_a_matching_question():
+    with pytest.raises(QuestionsError, match="Q99"):
+        rescore([question()], [make_score(id="Q99")])
+
+
+def test_rescore_command_rewrites_the_results_and_the_report(workspace, capsys):
+    tmp = workspace["tmp"]
+    output, report = tmp / "r.jsonl", tmp / "r.md"
+    answers = ["answers", *common(workspace), "--output", str(output), "--report", str(report)]
+    assert main(answers, environ={}, llm_factory=FakeLLM("Sem o termo. [Fonte: norma-teste, art. 1º]")) == 0
+    assert load_scores(output)[0].items_missing == ["cita arrolamento"]  # a resposta não traz a palavra do gabarito
+
+    data = json.loads(workspace["questions"].read_text(encoding="utf-8"))
+    data[0]["items"] = [{"label": "cita o termo", "any_of": ["termo"]}]  # gabarito corrigido
+    workspace["questions"].write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+    code = main(["rescore", "--questions", str(workspace["questions"]), "--input", str(output), "--report", str(report),
+                 "--model", "modelo-x"], environ={}, llm_factory=FakeLLM())
+    assert code == 0
+    assert load_scores(output)[0].items_found == ["cita o termo"]  # reescrito no próprio arquivo
+    text = report.read_text(encoding="utf-8")
+    assert "modelo-x" in text and "Total" in text
+    assert "Total" in capsys.readouterr().out
+
+
+def test_rescore_command_does_not_need_the_index_or_the_model(workspace):
+    output = workspace["tmp"] / "r.jsonl"
+    append_score(output, make_score(id="Q01", text="Sobre arrolamento. [Fonte: norma-teste, art. 1º]"))
+    llm = FakeLLM()
+    code = main(["rescore", "--questions", str(workspace["questions"]), "--input", str(output), "--model", "m",
+                 "--report", str(workspace["tmp"] / "r.md")], environ={}, llm_factory=llm)
+    assert code == 0 and llm.settings_seen == []  # nem o Ollama nem o índice foram tocados
+
+
+def test_rescore_command_reports_a_missing_input_file(workspace, capsys):
+    code = main(["rescore", "--questions", str(workspace["questions"]), "--input", str(workspace["tmp"] / "nada.jsonl"),
+                 "--model", "m"], environ={}, llm_factory=FakeLLM())
+    assert code == 1 and capsys.readouterr().err.startswith("Erro:")
+
+
 # ---------- resumo e relatório ----------
 
 def test_summarize_groups_and_totals():
@@ -710,3 +789,20 @@ def test_bad_usage_exits_with_code_2():
     with pytest.raises(SystemExit) as stop:
         main([], environ={}, llm_factory=FakeLLM())
     assert stop.value.code == 2
+
+
+def test_rescore_command_requires_the_model_name_for_the_report_header(workspace):
+    with pytest.raises(SystemExit) as stop:
+        main(["rescore", "--questions", str(workspace["questions"]), "--input", str(workspace["tmp"] / "r.jsonl")],
+             environ={}, llm_factory=FakeLLM())
+    assert stop.value.code == 2
+
+
+def test_rescore_command_writes_to_another_file_when_asked(workspace):
+    source, target = workspace["tmp"] / "r.jsonl", workspace["tmp"] / "novo.jsonl"
+    append_score(source, make_score(id="Q01", text="Sobre arrolamento. [Fonte: norma-teste, art. 1º]"))
+    before = source.read_text(encoding="utf-8")
+    code = main(["rescore", "--questions", str(workspace["questions"]), "--input", str(source), "--output", str(target),
+                 "--model", "m"], environ={}, llm_factory=FakeLLM())
+    assert code == 0 and source.read_text(encoding="utf-8") == before and load_scores(target)[0].items_found == ["cita arrolamento"]
+    assert (workspace["tmp"] / "novo.md").exists()  # o relatório acompanha o arquivo de saída

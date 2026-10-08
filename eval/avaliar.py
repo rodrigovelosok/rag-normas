@@ -12,7 +12,7 @@ import sys
 import time
 import unicodedata
 from collections.abc import Callable, Collection, Mapping, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import date
 from pathlib import Path
 
@@ -43,6 +43,10 @@ RRF_SWEEP_KS = [3, 4, 5, 6]  # k em que a varredura mede a recuperação
 
 class QuestionsError(ValueError):
     """Problema no arquivo de perguntas. A mensagem diz qual pergunta e o que corrigir."""
+
+
+class ResultsError(ValueError):
+    """Problema com um arquivo de resultados (.jsonl) gravado por uma rodada anterior."""
 
 
 @dataclass(frozen=True)
@@ -404,6 +408,48 @@ def load_scores(path: Path) -> list[AnswerScore]:
     return [AnswerScore(**json.loads(line)) for line in lines if line.strip()]
 
 
+def save_scores(path: Path, scores: Sequence[AnswerScore]) -> None:
+    """Grava todos os resultados de uma vez, uma linha JSON por pergunta (substitui o arquivo)."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("".join(json.dumps(asdict(score), ensure_ascii=False) + "\n" for score in scores), encoding="utf-8")
+
+
+def rescore(questions: Sequence[Question], scores: Sequence[AnswerScore]) -> list[AnswerScore]:
+    """Reavalia respostas JÁ GRAVADAS com o gabarito atual, sem chamar o modelo.
+
+    Serve quando o gabarito (expressões regulares) é corrigido depois de uma rodada: o texto de cada resposta está
+    no arquivo de resultados, então itens e citações podem ser conferidos de novo. O que depende da execução
+    (tempo, busca, citações inexistentes, recusa) não muda.
+
+    Raises:
+        QuestionsError: Se algum resultado tiver um id que não existe no gabarito.
+    """
+    by_id = {question.id: question for question in questions}
+    updated = []
+    for score in scores:
+        question = by_id.get(score.id)
+        if question is None:
+            raise QuestionsError(f"o resultado de {score.id} não tem pergunta correspondente no gabarito")
+        if score.refused:
+            found, missing, cited = [], [item.label for item in question.items], []
+        else:
+            found, missing = match_items(score.text, question.items)
+            cited = extract_citations(score.text)
+        updated.append(
+            replace(
+                score,
+                group=question.group,
+                kind=question.kind,
+                items_found=found,
+                items_missing=missing,
+                cited=cited,
+                cited_recall=article_recall(question.articles, cited),
+            )
+        )
+    return updated
+
+
 def run_answers(
     questions: Sequence[Question],
     hits_by_id: Mapping[str, Sequence[Hit]],
@@ -622,6 +668,16 @@ def build_parser() -> argparse.ArgumentParser:
     answers.add_argument("--resume", action="store_true", help="não repete as perguntas já gravadas no arquivo de saída")
     answers.add_argument("--output", type=Path, help="arquivo .jsonl de resultados (padrão: eval/relatorios/respostas-<modelo>-k<k>.jsonl)")
     answers.add_argument("--report", type=Path, help="relatório em Markdown (padrão: o mesmo nome do --output, com .md)")
+
+    again = commands.add_parser("rescore", help="reavalia respostas já gravadas com o gabarito atual (sem Ollama nem índice)")
+    again.add_argument("--questions", type=Path, default=DEFAULT_QUESTIONS, help="arquivo de perguntas (padrão: eval/perguntas.json)")
+    again.add_argument("--input", type=Path, required=True, help="arquivo .jsonl gravado por 'answers'")
+    again.add_argument("--output", type=Path, help="onde gravar os resultados reavaliados (padrão: reescreve o --input)")
+    again.add_argument("--report", type=Path, help="relatório em Markdown (padrão: o mesmo nome do arquivo de saída, com .md)")
+    again.add_argument("--model", required=True, help="nome do modelo, só para o cabeçalho do relatório")
+    again.add_argument("-k", "--top-k", type=int, help="k usado na rodada original, para o cabeçalho (padrão: 4)")
+    again.add_argument("--rrf-k", type=int, help="constante do RRF usada na rodada original, para o cabeçalho (padrão: 5)")
+    again.add_argument("--min-similarity", type=float, help="limiar usado na rodada original, para o cabeçalho (padrão: 0.56)")
     return parser
 
 
@@ -634,22 +690,39 @@ def main(
     args = build_parser().parse_args(argv)
     try:
         settings = Settings.from_env(environ).with_overrides(
-            ollama_host=args.host,
-            embed_model=args.embed_model,
+            ollama_host=getattr(args, "host", None),
+            embed_model=getattr(args, "embed_model", None),
             top_k=args.top_k,
             rrf_k=args.rrf_k,
-            index_path=args.index,
+            index_path=getattr(args, "index", None),
             chat_model=getattr(args, "model", None),
             min_similarity=getattr(args, "min_similarity", None),
         )
+        if args.command == "rescore":  # só relê o que já foi gravado: não precisa do índice nem do Ollama
+            return _run_rescore(args, settings)
         index = load_index(settings.index_path, expected_model=settings.embed_model)
         questions = load_questions(args.questions, valid_articles={chunk.reference for chunk in index.chunks})
         if args.command == "retrieval":
             return _run_retrieval(args, settings, index, questions, llm_factory)
         return _run_answers(args, settings, index, questions, llm_factory)
-    except (ConfigError, LLMError, IndexFileError, QuestionsError) as error:
+    except (ConfigError, LLMError, IndexFileError, QuestionsError, ResultsError) as error:
         print(f"Erro: {error}", file=sys.stderr)
         return 1
+
+
+def _run_rescore(args, settings: Settings) -> int:
+    if not args.input.exists():
+        raise ResultsError(f"arquivo de resultados não encontrado: {args.input}")
+    questions = load_questions(args.questions)
+    scores = rescore(questions, load_scores(args.input))
+    output = args.output or args.input
+    save_scores(output, scores)
+    report = render_report(
+        settings.chat_model, settings.top_k, settings.min_similarity, scores, date.today().isoformat(), settings.rrf_k
+    )
+    _write(args.report or output.with_suffix(".md"), report)
+    print(report, end="")
+    return 0
 
 
 def _memoized(embed: EmbedFn) -> EmbedFn:

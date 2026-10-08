@@ -57,8 +57,8 @@
     "question": "Em que situações o arrolamento é cancelado?",
     "articles": ["IN RFB 2.091/2022, art. 16", "IN RFB 2.091/2022, art. 17"],
     "items": [
-      {"label": "extinção do crédito tributário", "any_of": ["extincao"]},
-      {"label": "garantia da execução (Lei 6.830)", "any_of": ["garantia da execucao", "garantia.{0,30}execucao"]},
+      {"label": "extinção do crédito tributário", "any_of": ["extincao", "extint"]},
+      {"label": "garantia da execução (Lei 6.830)", "any_of": ["garantia da execucao", "garantia.{0,30}execucao", "garantid[oa]s?"]},
       {"label": "fiança bancária ou seguro-garantia", "any_of": ["fianca", "seguro.?garantia"]},
       {"label": "desapropriação", "any_of": ["desapropria"]},
       {"label": "perda total do bem", "any_of": ["perda total", "roubo", "furto"]},
@@ -162,8 +162,8 @@
     "articles": ["IN RFB 2.091/2022, art. 15"],
     "items": [
       {"label": "a substituição é admitida, a pedido", "any_of": ["substitu.{0,120}principal", "principal.{0,120}substitu"]},
-      {"label": "vale mesmo que o principal não se enquadre nos requisitos", "any_of": ["ainda que.{0,60}nao se enquadre", "mesmo que.{0,60}nao (se )?enquadr", "nao (precisa|necessita|e necessario).{0,60}(enquadr|requisit|atender)", "independe.{0,60}(enquadr|requisit)"]},
-      {"label": "pedido subscrito pelos dois devedores", "any_of": ["ambos os devedores", "subscrit", "assinad", "dois devedores", "devedores principal e solidario"]},
+      {"label": "vale mesmo que o principal não se enquadre nos requisitos", "any_of": ["ainda que.{0,60}nao se enquadre", "mesmo que.{0,60}nao (se )?enquadr", "nao (precisa|necessita|e necessario).{0,60}(enquadr|requisit|atender)", "independe.{0,60}(enquadr|requisit)", "nao (precisa|necessita|e necessario|e preciso|exige).{0,60}(atingir|alcancar|cumprir|limite)"]},
+      {"label": "pedido subscrito pelos dois devedores", "any_of": ["ambos os devedores", "subscrit", "assinad", "dois devedores", "devedores principal e solidario", "ambos assin", "assinem", "assinatura", "pelos dois", "por ambos"]},
       {"label": "pode ser feito já no primeiro momento do arrolamento", "any_of": ["primeiro momento", "desde o (inicio|primeiro)", "no inicio do arrolamento"]}
     ]
   },
