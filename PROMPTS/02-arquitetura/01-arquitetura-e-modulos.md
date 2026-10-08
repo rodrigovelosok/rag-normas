@@ -75,4 +75,5 @@ Pontos em que a IA foi além do pedido ou corrigiu o planejamento:
 - [ ] O formato de citação `[Fonte: …, art. N]` é aceitável?
 - [ ] Alguma decisão de projeto deveria ser outra?
 
-_Alterações feitas após a revisão:_ (preencher)
+_Alterações feitas após a revisão:_ o autor escolheu **incluir o Decreto 7.573/2011 no corpus** (opção que a
+IA tinha recomendado deixar de fora). Corpus passa a 31 chunks; decisão D9 e ajustes nos documentos.

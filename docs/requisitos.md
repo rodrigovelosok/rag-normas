@@ -15,7 +15,9 @@ análise, sem ler a instrução normativa inteira.
 **Corpus da v1.0:**
 
 - Instrução Normativa RFB nº 2.091/2022, texto consolidado;
-- Lei nº 9.532/1997, arts. 64 e 64-A.
+- Lei nº 9.532/1997, arts. 64 e 64-A;
+- Decreto nº 7.573/2011, que eleva para R$ 2.000.000,00 o limite do § 7º do art. 64 da Lei 9.532/1997
+  (incluído em 08/10/2026).
 
 **Exemplos de perguntas:**
 
@@ -81,7 +83,8 @@ As metas da v1.0 são estimativas iniciais e serão recalibradas com os primeiro
 ## 6. Fora de escopo da v1.0
 
 - Interface web (Streamlit/Gradio): fica nos próximos passos do README.
-- Medida cautelar fiscal (Lei 8.397/1992) e qualquer outra norma além do corpus da seção 1.
+- Medida cautelar fiscal (Lei 8.397/1992) e qualquer outra norma além do corpus da seção 1. (O capítulo da IN
+  sobre a representação para a cautelar **está** no corpus, porque faz parte do texto da IN.)
 - Conversa com várias perguntas encadeadas (memória de diálogo).
 - Versões históricas da norma (só o texto consolidado vigente).
 - Qualquer dado de contribuinte, real ou fictício.

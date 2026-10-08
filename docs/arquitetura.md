@@ -126,13 +126,17 @@ funções falsas (*mocks*) que devolvem respostas fixas.
 | # | Decisão | Alternativa descartada | Motivo |
 |---|---|---|---|
 | D1 | Um chunk por artigo | Janela fixa de N palavras | O artigo é a unidade que o usuário cita; a referência sai de graça |
-| D2 | Busca em memória, índice em JSON | Banco vetorial (Chroma, FAISS) | Poucas dezenas de chunks; menos dependência (RNF06) |
-| D3 | Python puro para cosseno e BM25 | NumPy | Com ~36 chunks não há ganho; uma dependência a menos e o cálculo fica legível |
+| D2 | Busca em memória, índice em JSON | Banco vetorial (Chroma, FAISS) | 31 chunks; menos dependência (RNF06) |
+| D3 | Python puro para cosseno e BM25 | NumPy | Com 31 chunks não há ganho; uma dependência a menos e o cálculo fica legível |
 | D4 | `llm.py` é o único módulo que importa `ollama` | Chamar o Ollama de vários módulos | Isola o ponto externo; viabiliza os mocks (RNF03) |
 | D5 | Funções injetadas por parâmetro | Variável global ou *patch* nos testes | Mais simples de ler e de testar para quem está começando |
 | D6 | Citação em formato fixo `[Fonte: <norma>, art. N]` | Citação livre no texto | Torna a verificação do RF10 confiável: só conferimos o que o modelo citou nesse formato |
 | D7 | Layout plano (`rag_normas/` na raiz) | `src/rag_normas/` | `python -m rag_normas` sem instalar o pacote; instruções de uso mais curtas |
-| D8 | BM25 recalculado a cada pergunta | Guardar estatísticas no índice | Custo desprezível com ~36 chunks; um formato de índice mais simples |
+| D8 | BM25 recalculado a cada pergunta | Guardar estatísticas no índice | Custo desprezível com 31 chunks; um formato de índice mais simples |
+| D9 | Incluir o Decreto 7.573/2011 no corpus | Tratar a divergência de valor como limitação conhecida | Evita resposta errada sobre o limite (R$ 500 mil × R$ 2 milhões) e vira caso de teste |
+
+**Corpus (08/10/2026):** 31 chunks = IN RFB 2.091/2022 (27 artigos) + Lei 9.532/1997 (arts. 64 e 64-A) +
+Decreto 7.573/2011 (2 artigos). Esse número é o gabarito do teste CA01.
 
 ## 7. Decisões em aberto (resolver durante a implementação)
 
@@ -141,7 +145,10 @@ funções falsas (*mocks*) que devolvem respostas fixas.
    aparecer nos artigos. O valor do limiar é calibrado na Fase 4 com perguntas dentro e fora do corpus.
 2. **Escopo da verificação de citações (RF10).** Mínimo: o artigo citado existe no índice. Mais forte: o artigo
    citado está entre os *k* recuperados. Começar pelo mínimo e medir quantas respostas o mais forte reprovaria.
-3. **Conflito Lei × IN sobre o valor de corte** (R$ 500 mil no art. 64, § 7º, da Lei; R$ 2 milhões no art. 2º,
-   II, da IN). O Decreto nº 7.573/2011 explica a diferença, mas não está no corpus. Opções: incluir o decreto na
-   v1.0 ou registrar como limitação conhecida e como caso do conjunto de avaliação (resposta esperada: citar a
-   IN para o limite vigente).
+
+### Decisão resolvida: conflito Lei × IN sobre o valor de corte
+
+A Lei 9.532, art. 64, § 7º, fala em R$ 500 mil; a IN 2.091, art. 2º, II, usa R$ 2 milhões. A diferença vem do
+**Decreto nº 7.573/2011**, que o autor decidiu **incluir no corpus** (D9). O caso vira pergunta do conjunto de
+avaliação: "Qual o valor mínimo de débitos para o arrolamento?", com resposta esperada citando a IN, art. 2º, II,
+e o Decreto, art. 1º. Para a resposta citar o decreto, o `search.py` precisa recuperá-lo junto com a IN.
