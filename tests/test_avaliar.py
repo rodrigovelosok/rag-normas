@@ -1184,3 +1184,10 @@ def test_compare_command_reports_wrong_number_of_names_and_missing_files(workspa
     )
     err = capsys.readouterr().err
     assert err.startswith("Erro:") and "não encontrado" in err
+
+
+def test_help_lists_all_four_commands(capsys):
+    with pytest.raises(SystemExit):
+        main(["--help"])
+    usage = capsys.readouterr().out.splitlines()[0]
+    assert "{retrieval,answers,rescore,compare}" in usage

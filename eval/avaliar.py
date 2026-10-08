@@ -52,7 +52,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python -m eval.avaliar", description="Avalia a busca e as respostas do rag-normas."
     )
-    commands = parser.add_subparsers(dest="command", required=True, metavar="{retrieval,answers}")
+    commands = parser.add_subparsers(dest="command", required=True)
 
     retrieval = commands.add_parser(
         "retrieval", parents=[common], help="avalia só a busca e a varredura do limiar (rápido, sem chat)"
