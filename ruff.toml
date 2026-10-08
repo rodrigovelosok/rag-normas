@@ -2,7 +2,8 @@
 #   python -m ruff check .          aponta erros prováveis e estilo
 #   python -m ruff format --check . confere a formatação (sem --check, formata)
 line-length = 120
-target-version = "py314"
+# py313: o formatador mantém os parênteses em "except (A, B):" (no 3.14 ele os removeria, o que confunde)
+target-version = "py313"
 
 [lint]
 # E/W: estilo PEP 8 · F: erros (nome indefinido, importação sem uso) · I: ordem das importações
