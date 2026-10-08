@@ -89,6 +89,42 @@ pergunta recusável mais parecida com o corpus fica em 0,535 e a pergunta respon
 A folga é de apenas 0,05 e vem de 21 perguntas; o limiar de 0,56 (meio da faixa) é o candidato, a confirmar com mais
 perguntas.
 
+**Calibração da constante do RRF:** a varredura (1 a 100) mostrou que o valor da literatura (60) é ruim para este
+corpus: com 5, a recuperação em k = 4 vai de 84% para **97%** (só a Q01 ainda perde o Decreto). O limiar não muda: a
+faixa sem erros segue em 0,54 a 0,58. Novos padrões do produto: `rrf_k = 5` e `min_similarity = 0,56` (meio da
+faixa). Foram acrescentados `RAG_RRF_K` e `--rrf-k` (testes e mutação 17/17 nessa mudança). Cautela: a escolha foi
+feita sobre as mesmas 21 perguntas, então pode estar otimista para perguntas novas.
+
+**Rodadas completas com o `qwen2.5:3b` (21 perguntas, máquina ociosa, resultados em `eval/relatorios/`):**
+
+| | Antes (RRF 60, limiar 0,52) | Depois (RRF 5, limiar 0,56) |
+|---|---:|---:|
+| Respostas corretas | 10 de 21 | **12 de 21** |
+| Busca (artigos esperados recuperados) | 84% | **97%** |
+| Citação (artigos esperados citados) | 77% | **86%** |
+| Itens do gabarito presentes | 69% | **73%** |
+| Respostas indevidas (fora do corpus) | 1 (Q20, penhora) | **0** |
+| Recusas indevidas | 0 | 0 |
+| Citações inexistentes | 0 | **0** |
+| Tempo médio das respondidas | 89,8 s | 60,5 s |
+
+Por grupo, no "depois": fatos pontuais 4 de 5, listas 3 de 5, combinações de normas 0 de 3, difíceis 0 de 3, fora do
+corpus 5 de 5. O que sobra de erro é **conteúdo incompleto do modelo pequeno**: citações inexistentes nunca
+ocorreram, e a busca já traz os artigos certos em 97% dos casos. Exemplos: Q01 (diz os dois valores mas não que são
+cumulativos), Q06 (lista só parte das hipóteses de cancelamento), Q14 (cônjuge: omite a regra da união estável), Q15
+(omite a responsabilidade subsidiária).
+
+**Tempo:** a meta de 60 s (RNF04/CA08) ficou no limite (60,5 s) e a variação é enorme (7 a 106 s no "depois"). Parte
+da variação é cache de prefixo do Ollama (perguntas seguidas que recuperam os mesmos artigos ficam rápidas). Além
+disso, a velocidade da máquina caiu ao longo do dia: o mesmo prompt de 3.039 tokens levava ~16 s na noite anterior e
+levou 94 s depois das rodadas (leitura do prompt: ~190 contra 45 tokens/s), com a máquina ociosa e a memória livre
+baixa (2 a 4 GB). Os tempos devem ser lidos com essa ressalva; a causa (limitação de energia/temperatura ou pressão
+de memória) não foi isolada.
+
+**Experimento offline, teto de caracteres no contexto:** limitar o texto entregue ao modelo a 10.000 caracteres mantém
+a recuperação em 97% (k = 4) e reduz o prompt médio em 17% (9.412 para 7.776 caracteres) e o máximo em 26%; tetos
+menores (8.000 ou menos) perdem busca. Ganho modesto; não implementado por enquanto.
+
 **Revisão do plano:** a calibração do limiar e a medição do k não precisam do modelo de chat, então rodam em
 segundos; só a comparação 3b × 7b é demorada.
 
