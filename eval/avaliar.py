@@ -578,6 +578,63 @@ def _describe_failure(score: AnswerScore) -> str:
     return " · ".join(parts)
 
 
+def render_comparison(names: Sequence[str], runs: Sequence[Sequence[AnswerScore]], today: str) -> str:
+    """Compara rodadas das mesmas perguntas lado a lado (por exemplo, dois modelos).
+
+    Raises:
+        ResultsError: Se faltar um nome para alguma rodada ou se as rodadas não tiverem as mesmas perguntas.
+    """
+    if len(names) != len(runs):
+        raise ResultsError(f"é preciso um nome para cada arquivo de resultados: {len(runs)} arquivos e {len(names)} nomes")
+    ids = [{score.id for score in run} for run in runs]
+    if any(group != ids[0] for group in ids):
+        raise ResultsError("as rodadas não têm as mesmas perguntas; compare só rodadas completas ou do mesmo subconjunto")
+
+    def answerable(run: Sequence[AnswerScore]) -> list[AnswerScore]:
+        return [score for score in run if score.kind == "answer"]
+
+    def seconds(run: Sequence[AnswerScore]) -> str:
+        answered = [score.seconds for score in run if not score.refused]  # recusa não chama o modelo: 0 s distorceria
+        return _decimal(sum(answered) / len(answered), 1) if answered else "—"
+
+    metrics = [
+        ("Respostas corretas", lambda run: f"{sum(s.correct for s in run)} de {len(run)}"),
+        ("Itens do gabarito presentes", lambda run: _pct(_mean([s.item_score for s in answerable(run)]))),
+        ("Citações dos artigos esperados", lambda run: _pct(_mean([s.cited_recall for s in answerable(run)]))),
+        ("Busca (artigos esperados recuperados)", lambda run: _pct(_mean([s.retrieval_recall for s in answerable(run)]))),
+        ("Recusas indevidas", lambda run: str(sum(s.false_refusal for s in run))),
+        ("Respostas indevidas", lambda run: str(sum(s.missed_refusal for s in run))),
+        ("Citações inexistentes", lambda run: str(sum(len(s.invalid_citations) for s in run))),
+        ("Tempo médio das respondidas (s)", seconds),
+    ]
+    lines = [
+        "# Comparação entre rodadas",
+        "",
+        f"Data: {today} · mesmas {len(ids[0])} perguntas em todas as rodadas",
+        "",
+        "| Métrica | " + " | ".join(names) + " |",
+        "|---|" + "---:|" * len(names),
+    ]
+    for label, compute in metrics:
+        lines.append(f"| {label} | " + " | ".join(compute(run) for run in runs) + " |")
+
+    lines += ["", "## Por pergunta (acertou · itens presentes · tempo)", "", "| Pergunta | Grupo | " + " | ".join(names) + " |",
+              "|---|---|" + "---|" * len(names)]
+    by_run = [{score.id: score for score in run} for run in runs]
+    for score in runs[0]:
+        cells = []
+        for results in by_run:
+            other = results[score.id]
+            if other.refused:
+                cells.append("recusou")
+            elif other.kind == "refuse":
+                cells.append(f"respondeu · {other.seconds:.0f} s")
+            else:
+                cells.append(f"{'sim' if other.correct else 'não'} · {other.item_score:.0%} · {other.seconds:.0f} s")
+        lines.append(f"| {score.id} | {GROUP_LABELS[score.group]} | " + " | ".join(cells) + " |")
+    return "\n".join(lines) + "\n"
+
+
 def render_retrieval_report(
     questions: Sequence[Question],
     hits_by_id: Mapping[str, Sequence[Hit]],
@@ -678,6 +735,11 @@ def build_parser() -> argparse.ArgumentParser:
     again.add_argument("-k", "--top-k", type=int, help="k usado na rodada original, para o cabeçalho (padrão: 4)")
     again.add_argument("--rrf-k", type=int, help="constante do RRF usada na rodada original, para o cabeçalho (padrão: 5)")
     again.add_argument("--min-similarity", type=float, help="limiar usado na rodada original, para o cabeçalho (padrão: 0.56)")
+
+    compare = commands.add_parser("compare", help="compara rodadas gravadas das mesmas perguntas (por exemplo, 3b e 7b)")
+    compare.add_argument("--inputs", type=Path, nargs="+", required=True, help="arquivos .jsonl de resultados")
+    compare.add_argument("--names", nargs="+", required=True, help="um nome para cada arquivo, na mesma ordem")
+    compare.add_argument("--report", type=Path, default=REPORTS_DIR / "comparacao.md", help="onde gravar o relatório")
     return parser
 
 
@@ -689,6 +751,8 @@ def main(
     """Executa um comando e devolve o código de saída: 0 sucesso, 1 erro, 2 erro de uso."""
     args = build_parser().parse_args(argv)
     try:
+        if args.command == "compare":  # só lê resultados gravados
+            return _run_compare(args)
         settings = Settings.from_env(environ).with_overrides(
             ollama_host=getattr(args, "host", None),
             embed_model=getattr(args, "embed_model", None),
@@ -708,6 +772,16 @@ def main(
     except (ConfigError, LLMError, IndexFileError, QuestionsError, ResultsError) as error:
         print(f"Erro: {error}", file=sys.stderr)
         return 1
+
+
+def _run_compare(args) -> int:
+    for path in args.inputs:
+        if not path.exists():
+            raise ResultsError(f"arquivo de resultados não encontrado: {path}")
+    report = render_comparison(args.names, [load_scores(path) for path in args.inputs], date.today().isoformat())
+    _write(args.report, report)
+    print(report, end="")
+    return 0
 
 
 def _run_rescore(args, settings: Settings) -> int:

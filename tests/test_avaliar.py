@@ -14,6 +14,7 @@ from eval.avaliar import (
     Item,
     Question,
     QuestionsError,
+    ResultsError,
     RrfRow,
     append_score,
     article_recall,
@@ -24,6 +25,7 @@ from eval.avaliar import (
     make_search,
     match_items,
     recall_at_k,
+    render_comparison,
     render_report,
     render_retrieval_report,
     rescore,
@@ -487,6 +489,18 @@ def test_rescore_recomputes_the_citation_recall_with_the_current_articles():
     assert updated.cited_recall == 1.0
 
 
+def test_rescore_recomputes_the_citations_from_the_saved_text():
+    saved = make_score(id="Q01", text="X. [Fonte: IN RFB 2.091/2022, art. 2º]", cited=[], cited_recall=0.0)
+    [updated] = rescore([question()], [saved])
+    assert updated.cited == [ART_2] and updated.cited_recall == 1.0
+
+
+def test_rescore_takes_the_kind_from_the_current_questions():
+    saved = make_score(id="Q01", kind="answer")
+    [updated] = rescore([question(kind="refuse", group="out_of_corpus", articles=(), items=())], [saved])
+    assert updated.kind == "refuse"
+
+
 def test_rescore_keeps_refusals_and_refreshes_the_missing_labels():
     saved = make_score(id="Q01", refused=True, text=REFUSAL_MESSAGE, cited=[], cited_recall=0.0, items_found=[], items_missing=["antigo"])
     [updated] = rescore([question()], [saved])
@@ -806,3 +820,75 @@ def test_rescore_command_writes_to_another_file_when_asked(workspace):
                  "--model", "m"], environ={}, llm_factory=FakeLLM())
     assert code == 0 and source.read_text(encoding="utf-8") == before and load_scores(target)[0].items_found == ["cita arrolamento"]
     assert (workspace["tmp"] / "novo.md").exists()  # o relatório acompanha o arquivo de saída
+
+
+# ---------- comparação entre rodadas ----------
+
+def comparison_runs():
+    answered = make_score(id="Q01", seconds=10.0)
+    half = make_score(id="Q02", items_found=["a"], items_missing=["b"], seconds=20.0)
+    refusal = make_score(id="Q03", kind="refuse", group="out_of_corpus", refused=True, items_found=[], items_missing=[], seconds=0.0)
+    slower = [make_score(id="Q01", seconds=100.0), make_score(id="Q02", seconds=300.0), refusal]
+    return [answered, half, refusal], slower
+
+
+def test_render_comparison_summarizes_each_run_and_marks_each_question():
+    first, second = comparison_runs()
+    report = render_comparison(["3b", "7b"], [first, second], today="2026-10-08")
+    assert "2026-10-08" in report and "| Métrica | 3b | 7b |" in report
+    assert "| Respostas corretas | 2 de 3 | 3 de 3 |" in report
+    assert "| Itens do gabarito presentes | 75% | 100% |" in report
+    assert "| Tempo médio das respondidas (s) | 15,0 | 200,0 |" in report  # a recusa (0 s) não entra na média
+    assert "| Q01 | Fatos pontuais | sim · 100% · 10 s | sim · 100% · 100 s |" in report
+    assert "| Q02 | Fatos pontuais | não · 50% · 20 s | sim · 100% · 300 s |" in report
+    assert "| Q03 | Fora do corpus | recusou | recusou |" in report
+
+
+def test_render_comparison_counts_errors_of_each_kind_per_run():
+    refused_wrongly = dict(refused=True, items_found=[], items_missing=["a"])
+    answered_wrongly = dict(kind="refuse", group="out_of_corpus", refused=False, items_found=[], items_missing=[], seconds=42.0)
+    refused_rightly = dict(kind="refuse", group="out_of_corpus", refused=True, items_found=[], items_missing=[])
+    wrong_a = [make_score(id="Q01", **refused_wrongly), make_score(id="Q02", **refused_wrongly),
+               make_score(id="Q03", **answered_wrongly), make_score(id="Q04", invalid_citations=["X", "Y"])]
+    clean_b = [make_score(id="Q01"), make_score(id="Q02"), make_score(id="Q03", **refused_rightly), make_score(id="Q04")]
+    report = render_comparison(["a", "b"], [wrong_a, clean_b], today="2026-10-08")
+    assert "| Recusas indevidas | 2 | 0 |" in report  # contagens diferentes: não dá para trocar uma pela outra
+    assert "| Respostas indevidas | 1 | 0 |" in report
+    assert "| Citações inexistentes | 2 | 0 |" in report  # conta as citações, e não as perguntas
+    assert "| Q03 | Fora do corpus | respondeu · 42 s | recusou |" in report
+
+
+def test_render_comparison_requires_the_same_questions_in_every_run():
+    first, second = comparison_runs()
+    with pytest.raises(ResultsError, match="mesmas perguntas"):
+        render_comparison(["a", "b"], [first, second[:2]], today="2026-10-08")
+
+
+def test_render_comparison_requires_one_name_per_run():
+    first, second = comparison_runs()
+    with pytest.raises(ResultsError, match="nomes"):
+        render_comparison(["só um"], [first, second], today="2026-10-08")
+
+
+def test_compare_command_writes_the_report(workspace, capsys):
+    first, second = comparison_runs()
+    file_a, file_b, report = workspace["tmp"] / "a.jsonl", workspace["tmp"] / "b.jsonl", workspace["tmp"] / "c.md"
+    for path, scores in ((file_a, first), (file_b, second)):
+        for score in scores:
+            append_score(path, score)
+    code = main(["compare", "--inputs", str(file_a), str(file_b), "--names", "3b", "7b", "--report", str(report)],
+                environ={}, llm_factory=FakeLLM())
+    assert code == 0
+    assert "| Métrica | 3b | 7b |" in report.read_text(encoding="utf-8")
+    assert "Respostas corretas" in capsys.readouterr().out
+
+
+def test_compare_command_reports_wrong_number_of_names_and_missing_files(workspace, capsys):
+    path = workspace["tmp"] / "a.jsonl"
+    append_score(path, make_score())
+    assert main(["compare", "--inputs", str(path), str(path), "--names", "só-um"], environ={}, llm_factory=FakeLLM()) == 1
+    assert "nomes" in capsys.readouterr().err
+    assert main(["compare", "--inputs", str(path), str(workspace["tmp"] / "x.jsonl"), "--names", "a", "b"],
+                environ={}, llm_factory=FakeLLM()) == 1
+    err = capsys.readouterr().err
+    assert err.startswith("Erro:") and "não encontrado" in err

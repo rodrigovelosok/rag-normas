@@ -125,6 +125,38 @@ de memória) não foi isolada.
 a recuperação em 97% (k = 4) e reduz o prompt médio em 17% (9.412 para 7.776 caracteres) e o máximo em 26%; tetos
 menores (8.000 ou menos) perdem busca. Ganho modesto; não implementado por enquanto.
 
+**Rodada completa com o `qwen2.5:7b` e comparação (CA09)** — mesmas 21 perguntas, configuração calibrada, máquina
+ociosa; resultados em `eval/relatorios/comparacao.md`:
+
+| | 3b antes | 3b depois | 7b depois |
+|---|---:|---:|---:|
+| Respostas corretas | 10 de 21 | 12 de 21 | 12 de 21 |
+| Itens do gabarito presentes | 69% | 73% | 77% |
+| Citações dos artigos esperados | 77% | 86% | 90% |
+| Busca | 84% | 97% | 97% |
+| Citações inexistentes | 0 | 0 | 0 |
+| Tempo médio das respondidas | 89,8 s | 60,5 s | **161,6 s** |
+
+O 7b acerta o mesmo número de perguntas, mas **não as mesmas**: acerta Q06 e Q12 (o 3b não), e erra Q02 e Q03 (o 3b
+acerta). Ele é um pouco mais completo nas perguntas difíceis (65% dos itens contra 43%), mas **2,7 vezes mais
+lento** e, nas listas, tende a resumir (nas Q02 e Q03 omitiu itens que o 3b trouxe). Hipótese, não testada: o pedido
+"em poucas frases" do prompt pesa mais no 7b, que o obedece melhor. Conclusão provisória: o ganho de qualidade do 7b
+não compensa o custo de tempo nesta máquina; o padrão continua sendo o 3b.
+
+**Auditoria do gabarito (lição desta etapa).** Li todas as respostas em que algum item foi marcado como ausente: de
+todos os itens, 4 eram falhas das minhas expressões regulares, todas no 7b (ele escreveu "extintos" e "garantidos", e
+"ambos assinem" e "não precisa atingir os limites", e o gabarito só reconhecia "extinção", "garantia da execução",
+"assinad…" e "enquadr…"). Corrigi o gabarito e criei o comando `rescore`, que reavalia respostas já gravadas sem
+rodar o modelo de novo; reavaliei as três rodadas. Sem a auditoria, a métrica "Itens" subestimaria o 7b. Teste de
+mutação do `rescore` e do `compare`: 23 de 24 detectadas; o sobrevivente é equivalente (o texto de recusa não casa
+com nenhum item).
+
+**Limites da métrica (honestidade).** "Itens" mede **presença**, não **correção**: uma resposta pode conter todos os
+itens e afirmar algo errado ao lado. Exemplos vistos: o 3b respondeu, na Q16, que o devedor principal *precisa*
+atingir os limites (o contrário do art. 15, § 5º), e, na Q15, atribuiu à responsabilidade subsidiária uma regra da
+solidariedade. Nenhuma métrica atual pega isso; seria preciso um conjunto de "afirmações proibidas" por pergunta ou
+revisão humana. Os 12 acertos de cada modelo valem como "completo e citado", não como "juridicamente correto".
+
 **Revisão do plano:** a calibração do limiar e a medição do k não precisam do modelo de chat, então rodam em
 segundos; só a comparação 3b × 7b é demorada.
 
