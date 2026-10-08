@@ -46,5 +46,16 @@ vigente. O texto foi comparado com a impressão do Planalto de 03/12/2020: coinc
 atual.
 
 **Atenção — valor de corte:** o § 7º do art. 64 fala em R$ 500.000,00, mas o limite aplicado pela IN 2.091 é de
-R$ 2.000.000,00 (art. 2º, II), elevado pelo Decreto nº 7.573/2011, que **não** faz parte do corpus da v1.0.
-Ver `docs/arquitetura.md`, decisão em aberto 3.
+R$ 2.000.000,00 (art. 2º, II), elevado pelo Decreto nº 7.573/2011, que **faz parte do corpus** (ver abaixo).
+
+## Decreto nº 7.573/2011 — `decreto-7573-2011.txt`
+
+| Item | Valor |
+|---|---|
+| Norma | Decreto nº 7.573, de 29 de setembro de 2011 (DOU de 30/09/2011) |
+| Efeito | Eleva para R$ 2.000.000,00 o limite do § 7º do art. 64 da Lei 9.532/1997 |
+| Fonte | Portal da Legislação do Planalto (impressão de 03/12/2020), fornecida pelo autor do projeto |
+| Data da cópia | 08/10/2026 |
+
+**Tratamento do texto:** conteúdo normativo integral (2 artigos). Ficaram de fora a assinatura, a data de
+Brasília e o aviso "Este texto não substitui o publicado no DOU".
