@@ -315,6 +315,27 @@ def test_retrieval_report_has_the_rrf_section_only_when_rows_are_given():
     assert "constante do RRF usada nas demais tabelas: 7" in render_retrieval_report(*args, **kwargs, rrf_k=7)
     with_rows = render_retrieval_report(*args, **kwargs, rrf_rows=[RrfRow(10, {1: 1.0, 4: 1.0}), RrfRow(60, {1: 0.0, 4: 1.0})])
     assert "k do RRF" in with_rows and "| 10 | 100% | 100% |" in with_rows and "| 60 | 0% | 100% |" in with_rows
+    # sem as linhas do RRF, a tabela de recuperação é seguida (após uma linha em branco) pela seção de ausentes
+    assert "| 4 | 100% | 100% |\n\n## Perguntas em que falta" in without
+
+
+def test_retrieval_report_lists_the_missing_articles_or_says_none():
+    two = question(articles=(ART_2, ART_5))
+    kwargs = dict(k=4, ks=[4], thresholds=[0.5], today="2026-10-08")
+    partial = render_retrieval_report([two], {"Q01": [hit(CHUNK_2)]}, **kwargs)
+    assert f"- **Q01** (Fatos pontuais): faltou {ART_5}" in partial and "Nenhuma." not in partial
+    complete = render_retrieval_report([two], {"Q01": [hit(CHUNK_2), hit(CHUNK_5)]}, **kwargs)
+    assert "entre os k = 4 primeiros\n\nNenhuma.\n" in complete
+
+
+def test_retrieval_report_sorts_questions_by_best_similarity_descending():
+    hits = {"Q01": [hit(CHUNK_2, 0.40)], "Q02": [hit(CHUNK_2, 0.90)]}
+    report = render_retrieval_report(
+        [question(id="Q01"), question(id="Q02")], hits, k=4, ks=[4], thresholds=[0.5], today="2026-10-08"
+    )
+    assert report.index("| Q02 | Fatos pontuais | responder | 0,900 |") < report.index(
+        "| Q01 | Fatos pontuais | responder | 0,400 |"
+    )
 
 
 # ---------- resposta: pontuação de uma pergunta ----------
