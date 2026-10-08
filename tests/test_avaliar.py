@@ -9,35 +9,21 @@ from pathlib import Path
 
 import pytest
 
-from eval.avaliar import (
+from eval.avaliar import main
+from eval.gabarito import Item, Question, QuestionsError, fold, load_questions, match_items, strip_citations
+from eval.markdown import render_comparison, render_report, render_retrieval_report
+from eval.metricas import (
     AnswerScore,
-    Item,
-    Question,
-    QuestionsError,
     ResultsError,
     RrfRow,
-    append_score,
     article_recall,
-    fold,
-    load_questions,
-    load_scores,
-    main,
-    make_search,
-    match_items,
     recall_at_k,
-    render_comparison,
-    render_report,
-    render_retrieval_report,
-    rescore,
-    retrieve,
-    run_answer,
-    run_answers,
     score_retrieval,
-    strip_citations,
     summarize,
     sweep_rrf_k,
     sweep_threshold,
 )
+from eval.rodada import append_score, load_scores, make_search, rescore, retrieve, run_answer, run_answers
 from rag_normas.generate import REFUSAL_MESSAGE
 from rag_normas.index import build_index, save_index
 from rag_normas.ingest import Chunk, load_corpus
