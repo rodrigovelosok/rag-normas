@@ -136,17 +136,28 @@ funções falsas (*mocks*) que devolvem respostas fixas.
 | D7 | Layout plano (`rag_normas/` na raiz) | `src/rag_normas/` | `python -m rag_normas` sem instalar o pacote; instruções de uso mais curtas |
 | D8 | BM25 recalculado a cada pergunta | Guardar estatísticas no índice | Custo desprezível com 31 chunks; um formato de índice mais simples |
 | D9 | Incluir o Decreto 7.573/2011 no corpus | Tratar a divergência de valor como limitação conhecida | Evita resposta errada sobre o limite (R$ 500 mil × R$ 2 milhões) e vira caso de teste |
+| D10 | Recusar pela maior similaridade de cosseno entre os hits | Usar BM25 ou a nota do RRF | Só o cosseno é uma medida absoluta; BM25 pontua com uma palavra em comum e o RRF só dá posição |
+| D11 | Verificar só se a citação existe no índice (RF10) | Exigir que esteja entre os recuperados | Mínimo útil, sem reprovar respostas corretas; o caso mais forte é medido na Fase 4 |
+| D12 | Listar as fontes consultadas, não só as citadas | Listar só o que o modelo citou | O usuário confere o que o modelo viu; o modelo pode usar um fragmento sem citá-lo |
 
 **Corpus (08/10/2026):** 31 chunks = IN RFB 2.091/2022 (27 artigos) + Lei 9.532/1997 (arts. 64 e 64-A) +
 Decreto 7.573/2011 (2 artigos). Esse número é o gabarito do teste CA01.
 
-## 7. Decisões em aberto (resolver durante a implementação)
+## 7. Decisões que estavam em aberto
 
-1. **Critério de recusa (RF07).** O RRF devolve posições, não uma nota absoluta de relevância. Proposta: recusar
-   quando a **melhor similaridade de cosseno** ficar abaixo de um limiar **e** nenhum termo raro da pergunta
-   aparecer nos artigos. O valor do limiar é calibrado na Fase 4 com perguntas dentro e fora do corpus.
-2. **Escopo da verificação de citações (RF10).** Mínimo: o artigo citado existe no índice. Mais forte: o artigo
-   citado está entre os *k* recuperados. Começar pelo mínimo e medir quantas respostas o mais forte reprovaria.
+1. **Critério de recusa (RF07) — resolvido em 08/10/2026 (D10).** Recusa-se quando a **maior similaridade de
+   cosseno entre os artigos recuperados** fica abaixo do limiar (`min_similarity`). Descartamos a proposta de
+   combinar com "nenhum termo raro da pergunta aparece nos artigos": a pontuação do BM25 não serve de sinal
+   (qualquer palavra em comum pontua) e o RRF só informa posição. Compara-se com o **máximo** entre os hits, e não
+   com o primeiro, porque a lista vem ordenada pelo RRF, não pela similaridade. O valor do limiar continua
+   provisório e é calibrado na Fase 4. Como segunda barreira, a resposta do modelo que for exatamente a frase de
+   recusa também conta como recusa.
+2. **Escopo da verificação de citações (RF10) — resolvido em 08/10/2026 (D11).** Vale o **mínimo**: a citação
+   precisa existir no índice (se não existir, vira aviso na saída). A verificação mais forte (estar entre os
+   recuperados) **não bloqueia nada**, mas fica registrada em `Answer.unretrieved_citations` para a Fase 4 medir
+   quantas respostas ela reprovaria.
+3. **Fontes listadas (RF06) — D12.** A lista mostra os artigos **consultados** (os que o modelo recebeu), e não só
+   os citados: é a informação que o usuário pode conferir, e o modelo pode esquecer de citar um fragmento que usou.
 
 ### Decisão resolvida: conflito Lei × IN sobre o valor de corte
 
