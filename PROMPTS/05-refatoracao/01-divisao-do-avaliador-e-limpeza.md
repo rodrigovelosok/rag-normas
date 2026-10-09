@@ -118,7 +118,7 @@ lista.
 
 ## Revisão humana
 
-- [ ] A divisão em módulos ficou fácil de navegar (cada arquivo tem um assunto só)?
-- [ ] Os nomes dos módulos (`gabarito`, `metricas`, `rodada`, `markdown`, `avaliar`) estão claros?
+- [x] A divisão em módulos ficou fácil de navegar (cada arquivo tem um assunto só)?
+- [x] Os nomes dos módulos (`gabarito`, `metricas`, `rodada`, `markdown`, `avaliar`) estão claros?
 
-_Alterações feitas após a revisão:_ (preencher)
+_Alterações feitas após a revisão:_ nenhuma; divisão e nomes aprovados pelo autor em 08/10/2026.
