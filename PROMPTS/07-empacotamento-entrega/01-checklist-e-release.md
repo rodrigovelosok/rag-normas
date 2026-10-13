@@ -58,7 +58,7 @@ Tabela do checklist, lista do que ficou de fora e, após autorização do autor,
 | 5 | Testes automatizados | ✅ | 249 testes; no clone novo do repositório público: `249 passed`, `ruff check` sem apontamentos, formatação conferida |
 | 6 | Credenciais e dados sensíveis | ✅ | varredura das 33 revisões: 0 chaves em formato conhecido, 0 caminhos locais; acertos em "secret" e "token" eram falsos positivos ("Secretaria", verbete do glossário); `.env` no `.gitignore` (o projeto não usa chaves) |
 | 7 | Branch principal limpo | ✅ | `git status` limpo; só a branch `main`; 62 arquivos versionados, nenhum temporário |
-| 8 | Release ou tag `v1.0.0` | ⏳ | ainda não existia tag nem release; criada após a autorização do autor (ver abaixo) |
+| 8 | Release ou tag `v1.0.0` | ✅ | não existia nenhuma; tag anotada `v1.0.0` criada e enviada em 13/10/2026, com autorização do autor |
 | 9 | Licença | ✅ | MIT, em nome do autor |
 
 **Reprodutibilidade do usuário novo (RNF02):** clone do repositório público numa pasta nova, ambiente virtual novo,
@@ -74,7 +74,7 @@ elaborar o relatório do arrolamento). É conteúdo legal do corpus e deve ser m
 
 ## Revisão humana
 
-- [ ] O autor autoriza a criação da tag `v1.0.0` e o envio dela ao GitHub?
-- [ ] O autor quer criar também a *Release* (com notas) pela página do GitHub? O `gh` não está instalado.
+- [x] O autor autoriza a criação da tag `v1.0.0` e o envio dela ao GitHub? (autorizado em 13/10/2026)
+- [x] O autor quer criar também a *Release* (com notas) pela página do GitHub? O `gh` não está instalado. (sim; o texto das notas foi preparado pela IA e a criação da Release é feita pelo autor na página)
 
-_Alterações feitas após a revisão:_ (preencher)
+_Alterações feitas após a revisão:_ nenhuma.
