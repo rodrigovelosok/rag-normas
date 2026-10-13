@@ -36,6 +36,7 @@ Depois do prompt vêm duas seções:
 | 4. Testes | [`04-testes/01-avaliacao-do-sistema.md`](04-testes/01-avaliacao-do-sistema.md) | conjunto de avaliação, calibração, comparação 3b × 7b e experimento de prompt |
 | 5. Refatoração | [`05-refatoracao/01-divisao-do-avaliador-e-limpeza.md`](05-refatoracao/01-divisao-do-avaliador-e-limpeza.md) | divisão do avaliador, linter e rede de segurança |
 | 6. Documentação | [`06-documentacao/01-readme-final.md`](06-documentacao/01-readme-final.md) | README final e demonstração |
+| 7. Entrega | [`07-empacotamento-entrega/01-checklist-e-release.md`](07-empacotamento-entrega/01-checklist-e-release.md) | checklist de submissão verificado com comandos reais e versão 1.0.0 |
 
 Se for ler só um, leia o da fase 3 sobre **resposta e recusa**: mostra o modelo pequeno recusando perguntas que a
 norma responde, e como isso foi descoberto e corrigido medindo, e não adivinhando.
