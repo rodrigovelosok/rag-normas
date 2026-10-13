@@ -17,10 +17,28 @@ com IA Generativa (UFG).
 
 ## Sumário
 
-[Objetivo](#objetivo) · [Como funciona](#como-funciona) · [Tecnologias](#tecnologias) ·
+[Para quem vai avaliar ou comentar](#para-quem-vai-avaliar-ou-comentar) · [Objetivo](#objetivo) ·
+[Como funciona](#como-funciona) · [Tecnologias](#tecnologias) ·
 [Instalação](#instalação) · [Uso](#uso) · [Exemplos](#exemplos) · [Testes e qualidade](#testes-e-qualidade) ·
 [Resultados da avaliação](#resultados-da-avaliação) · [Como a IA foi usada](#como-a-ia-foi-usada) ·
 [Limitações](#limitações) · [Próximos passos](#próximos-passos) · [Estrutura](#estrutura-do-repositório)
+
+## Para quem vai avaliar ou comentar
+
+Sem instalar nada, em ordem de tempo:
+
+1. **2 min** — veja o GIF acima e a seção [Exemplos](#exemplos) (saídas reais).
+2. **5 min** — leia [Resultados da avaliação](#resultados-da-avaliação) e [Limitações](#limitações): o que
+   funcionou, o que não funcionou (o critério CA08, de tempo, **não foi atingido**) e por quê.
+3. **10 min** — leia [`PROMPTS/`](PROMPTS/LEIAME.md), principalmente o da fase 3 sobre resposta e recusa: mostra como
+   a IA foi conduzida e onde errou.
+
+Para rodar os testes, **não precisa do Ollama**: `pip install -r requirements-dev.txt` e `python -m pytest -q`
+(249 testes, cerca de 3 s). Para rodar o assistente, precisa do Ollama e de cerca de 3 GB livres (ver
+[Instalação](#instalação)); cada resposta leva de 1 a 2 minutos em computador sem placa de vídeo.
+
+Onde o retorno ajuda mais: a **métrica de avaliação** (mede presença de itens, não correção), o **prompt do modelo
+pequeno** e a **busca** (BM25 + vetor + RRF). Termos técnicos estão no [glossário](docs/glossario.md).
 
 ## Objetivo
 
@@ -246,7 +264,7 @@ O 7b acerta perguntas diferentes, mas não mais, e é 2,7 vezes mais lento: o 3b
 O projeto foi desenvolvido com o **Claude Code** (agente de programação da Anthropic), com os modelos Claude Opus 5.5
 e Claude Sonnet 5.5 conforme a fase. A divisão de trabalho foi:
 
-- **A IA** escreveu os prompts de cada fase (formato CO-STAR, versionados em [`PROMPTS/`](PROMPTS/)), o código, os
+- **A IA** escreveu os prompts de cada fase (formato CO-STAR, versionados em [`PROMPTS/`](PROMPTS/LEIAME.md)), o código, os
   testes e a documentação, e executou testes, medições e experimentos.
 - **O autor** escolheu o tema e o escopo, tomou as decisões de projeto, revisou cada fase, trouxe o conhecimento
   do domínio e autorizou cada publicação no GitHub. Os commits com participação da IA trazem a linha

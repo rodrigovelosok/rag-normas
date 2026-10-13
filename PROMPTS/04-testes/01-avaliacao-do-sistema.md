@@ -55,7 +55,7 @@ Relatório objetivo, com números e sem adjetivos.
 
 ### A — Audiência
 
-O autor (programador iniciante em Python) e o avaliador do mini-projeto, que lerá o relatório no repositório.
+O autor (programador iniciante em Python) o avaliador do mini-projeto e os colegas da especialização (o link do repositório vai ao fórum do curso), que lerão o relatório no repositório.
 
 ### R — Resposta
 

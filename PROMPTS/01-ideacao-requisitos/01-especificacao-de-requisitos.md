@@ -49,9 +49,10 @@ Técnico e objetivo, de especificação; sem linguagem promocional.
 
 ### A — Audiência
 
-Dois leitores: (1) o próprio autor, programador iniciante em Python, que vai usar o
+Três leitores: (1) o próprio autor, programador iniciante em Python, que vai usar o
 documento como guia durante a implementação; (2) o avaliador do curso, que lê o repositório para verificar
-escopo e rastreabilidade.
+escopo e rastreabilidade; (3) os colegas da especialização (o link do repositório vai ao fórum do curso), que
+lerão e comentarão o projeto.
 
 ### R — Resposta
 

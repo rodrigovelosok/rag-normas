@@ -55,7 +55,7 @@ Relatório objetivo, com números, e explicação didática dos termos de engenh
 
 ### A — Audiência
 
-O autor (programador iniciante em Python, aprendendo engenharia de software) e o avaliador do mini-projeto.
+O autor (programador iniciante em Python, aprendendo engenharia de software), o avaliador do mini-projeto e os colegas da especialização (o link do repositório vai ao fórum do curso).
 
 ### R — Resposta
 

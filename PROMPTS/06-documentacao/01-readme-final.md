@@ -44,8 +44,9 @@ Profissional e honesto: resultados com números, limitações sem eufemismo.
 
 ### A — Audiência
 
-O avaliador do mini-projeto e qualquer pessoa que encontre o repositório no GitHub (precisa instalar e rodar só
-com o README, RNF02).
+O avaliador do mini-projeto; os colegas da especialização (o link do repositório vai ao fórum do curso), entre eles quem vai
+comentar o projeto (tarefa do fórum); e qualquer pessoa que encontre o repositório no GitHub. Todos precisam
+conseguir instalar e rodar só com o README (RNF02), sem conhecer o domínio jurídico.
 
 ### R — Resposta
 

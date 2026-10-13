@@ -53,7 +53,7 @@ Comentários didáticos e curtos, explicando o **porquê** de cada regex; mensag
 
 ### A — Audiência
 
-O autor (programador iniciante em Python), que vai ler o código e explicá-lo no fórum, e o avaliador do curso.
+O autor (programador iniciante em Python), que vai ler o código e explicá-lo no fórum, o avaliador do curso e os colegas da especialização (o link do repositório vai ao fórum do curso).
 
 ### R — Resposta
 

@@ -52,7 +52,7 @@ Mensagens curtas e diretas; erros dizem o que fazer.
 
 ### A — Audiência
 
-O autor (programador iniciante em Python), que vai rodar os comandos, e o avaliador do mini-projeto.
+O autor (programador iniciante em Python), que vai rodar os comandos, o avaliador do mini-projeto e os colegas da especialização (o link do repositório vai ao fórum do curso).
 
 ### R — Resposta
 

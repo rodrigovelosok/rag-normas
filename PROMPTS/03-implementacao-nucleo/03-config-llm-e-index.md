@@ -50,7 +50,7 @@ Mensagens de erro diretas, no formato "o que aconteceu + o que fazer".
 
 ### A — Audiência
 
-O autor (programador iniciante em Python), que vai rodar os comandos, e o avaliador.
+O autor (programador iniciante em Python), que vai rodar os comandos, o avaliador e os colegas da especialização (o link do repositório vai ao fórum do curso).
 
 ### R — Resposta
 

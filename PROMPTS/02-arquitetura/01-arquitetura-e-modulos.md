@@ -44,7 +44,7 @@ Técnico, direto e didático: o leitor está aprendendo a projetar software.
 
 ### A — Audiência
 
-O autor (programador iniciante em Python) e o avaliador do curso. Evitar abstrações que o autor não
+O autor (programador iniciante em Python), o avaliador do curso e os colegas da especialização (o link do repositório vai ao fórum do curso). Evitar abstrações que o autor não
 consiga escrever e explicar sozinho.
 
 ### R — Resposta

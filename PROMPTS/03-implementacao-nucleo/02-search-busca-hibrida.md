@@ -58,7 +58,7 @@ Comentários curtos e didáticos sobre o porquê de cada decisão numérica (por
 
 ### A — Audiência
 
-O autor (programador iniciante em Python) e o avaliador do curso.
+O autor (programador iniciante em Python), o avaliador do curso e os colegas da especialização (o link do repositório vai ao fórum do curso).
 
 ### R — Resposta
 
