@@ -295,7 +295,7 @@ Medição direta (o mesmo projeto feito sem IA) não existe, então os números 
 
 - As fases 1 a 5 do plano (requisitos, arquitetura, núcleo, avaliação e refatoração), previstas para 07 a 16/10,
   ficaram prontas em 07 e 08/10.
-- 249 testes, 21 perguntas de avaliação com gabarito, 4 rodadas completas de avaliação e 30 commits nesse período.
+- 249 testes, 21 perguntas de avaliação com gabarito, 4 rodadas completas de avaliação e mais de 30 commits nesse período.
 - O maior ganho não foi escrever código, e sim **experimentar**: varreduras de calibração, comparação de modelos,
   teste de mutação e reavaliação de respostas, que sem um agente seriam caros demais para um mini-projeto.
 
